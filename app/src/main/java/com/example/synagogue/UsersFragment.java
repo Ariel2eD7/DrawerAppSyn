@@ -52,7 +52,7 @@ public class UsersFragment extends Fragment implements OnMapReadyCallback {
 
         view.findViewById(com.example.drawerappsyn.R.id.buttonAddSynagogue).setOnClickListener(v ->
                 getParentFragmentManager().beginTransaction()
-                        .replace(com.example.drawerappsyn.R.id.fragment_container, new AddSynagogueFragment())
+                        .replace(com.example.drawerappsyn.R.id.fragment_container, new AddSynagogue01WelcomeFragment())
                         .addToBackStack(null).commit());
 
         recyclerView = view.findViewById(com.example.drawerappsyn.R.id.recyclerViewUsers);

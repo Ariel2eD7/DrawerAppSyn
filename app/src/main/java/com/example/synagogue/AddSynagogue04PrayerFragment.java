@@ -1,0 +1,609 @@
+package com.example.synagogue;
+
+import android.app.TimePickerDialog;
+import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.example.drawerappsyn.R;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+public class AddSynagogue04PrayerFragment extends Fragment {
+
+    private LinearLayout prayerContainer;
+    private TextView selectedDayTitle;
+
+    private final String[] dayKeys = {
+            "sunday",
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "shabbat"
+    };
+
+    private final String[] dayNames = {
+            "ראשון",
+            "שני",
+            "שלישי",
+            "רביעי",
+            "חמישי",
+            "שישי",
+            "שבת"
+    };
+
+    private int selectedDay = 0;
+
+    /*
+     * מבנה זמני של שעות התפילה.
+     *
+     * day -> prayer -> list of times
+     *
+     * לדוגמה:
+     * sunday -> shacharit -> ["07:00", "08:30"]
+     */
+    private final Map<String, Map<String, ArrayList<String>>> prayerData =
+            new HashMap<>();
+
+    public AddSynagogue04PrayerFragment() {
+        // Required empty public constructor
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(
+            @NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
+
+        return inflater.inflate(
+                R.layout.fragment_add_synagogue_04_prayer,
+                container,
+                false
+        );
+    }
+
+    @Override
+    public void onViewCreated(
+            @NonNull View view,
+            @Nullable Bundle savedInstanceState) {
+
+        super.onViewCreated(view, savedInstanceState);
+
+        prayerContainer = view.findViewById(R.id.prayerContainer);
+        selectedDayTitle = view.findViewById(R.id.selectedDayTitle);
+
+        MaterialButton buttonBack =
+                view.findViewById(R.id.buttonBack);
+
+        MaterialButton buttonNext =
+                view.findViewById(R.id.buttonNext);
+
+        setupPrayerData();
+        setupDayButtons(view);
+
+        buttonBack.setOnClickListener(v ->
+                requireActivity()
+                        .getSupportFragmentManager()
+                        .popBackStack()
+        );
+
+        buttonNext.setOnClickListener(v ->
+                continueToNextStep()
+        );
+
+        showSelectedDay();
+    }
+
+    private void setupPrayerData() {
+
+        for (String day : dayKeys) {
+
+            Map<String, ArrayList<String>> prayers =
+                    new HashMap<>();
+
+            prayers.put("shacharit", new ArrayList<>());
+            prayers.put("mincha", new ArrayList<>());
+            prayers.put("maariv", new ArrayList<>());
+            prayers.put("kabbalatShabbat", new ArrayList<>());
+            prayers.put("musaf", new ArrayList<>());
+            prayers.put("havdalah", new ArrayList<>());
+
+            prayerData.put(day, prayers);
+        }
+    }
+
+    private void setupDayButtons(View view) {
+
+        TextView[] buttons = {
+                view.findViewById(R.id.daySunday),
+                view.findViewById(R.id.dayMonday),
+                view.findViewById(R.id.dayTuesday),
+                view.findViewById(R.id.dayWednesday),
+                view.findViewById(R.id.dayThursday),
+                view.findViewById(R.id.dayFriday),
+                view.findViewById(R.id.dayShabbat)
+        };
+
+        for (int i = 0; i < buttons.length; i++) {
+
+            final int dayIndex = i;
+
+            buttons[i].setOnClickListener(v -> {
+
+                selectedDay = dayIndex;
+
+                updateDaySelection(buttons);
+
+                showSelectedDay();
+            });
+        }
+
+        updateDaySelection(buttons);
+    }
+
+    private void updateDaySelection(TextView[] buttons) {
+
+        for (int i = 0; i < buttons.length; i++) {
+
+            if (i == selectedDay) {
+
+                buttons[i].setBackgroundResource(
+                        R.drawable.bg_day_selected
+                );
+
+                buttons[i].setTextColor(
+                        getResources().getColor(
+                                android.R.color.white
+                        )
+                );
+
+            } else {
+
+                buttons[i].setBackgroundResource(
+                        R.drawable.bg_day_unselected
+                );
+
+                buttons[i].setTextColor(
+                        getResources().getColor(
+                                R.color.primary
+                        )
+                );
+            }
+        }
+    }
+
+    private void showSelectedDay() {
+
+        prayerContainer.removeAllViews();
+
+        String dayKey = dayKeys[selectedDay];
+
+        selectedDayTitle.setText(
+                "תפילות ביום " + dayNames[selectedDay]
+        );
+
+        addPrayerRow(
+                "shacharit",
+                "שחרית",
+                true
+        );
+
+        addPrayerRow(
+                "mincha",
+                "מנחה",
+                true
+        );
+
+        addPrayerRow(
+                "maariv",
+                "ערבית",
+                true
+        );
+
+        if (selectedDay == 5 || selectedDay == 6) {
+
+            addPrayerRow(
+                    "kabbalatShabbat",
+                    "קבלת שבת",
+                    false
+            );
+
+            addPrayerRow(
+                    "musaf",
+                    "מוסף",
+                    false
+            );
+
+            addPrayerRow(
+                    "havdalah",
+                    "הבדלה",
+                    false
+            );
+        }
+    }
+
+    private void addPrayerRow(
+            String prayerKey,
+            String prayerName,
+            boolean regularPrayer) {
+
+        String dayKey = dayKeys[selectedDay];
+
+        ArrayList<String> times =
+                prayerData
+                        .get(dayKey)
+                        .get(prayerKey);
+
+        MaterialCardView card =
+                new MaterialCardView(requireContext());
+
+        card.setRadius(20);
+        card.setCardElevation(2);
+        card.setUseCompatPadding(true);
+
+        LinearLayout layout =
+                new LinearLayout(requireContext());
+
+        layout.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        layout.setPadding(
+                20,
+                18,
+                20,
+                18
+        );
+
+        LinearLayout.LayoutParams cardParams =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        cardParams.setMargins(
+                0,
+                0,
+                0,
+                14
+        );
+
+        card.setLayoutParams(cardParams);
+
+        LinearLayout titleRow =
+                new LinearLayout(requireContext());
+
+        titleRow.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
+
+        titleRow.setGravity(
+                android.view.Gravity.CENTER_VERTICAL
+        );
+
+        CheckBox checkBox =
+                new CheckBox(requireContext());
+
+        checkBox.setText(prayerName);
+        checkBox.setTextSize(18);
+        checkBox.setTextColor(
+                getResources().getColor(
+                        android.R.color.black
+                )
+        );
+
+        checkBox.setChecked(
+                !times.isEmpty()
+        );
+
+        titleRow.addView(
+                checkBox,
+                new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1
+                )
+        );
+
+
+         TextView addTime =
+                new TextView(requireContext());
+
+        addTime.setText("+ הוסף שעה");
+        addTime.setTextSize(15);
+        addTime.setTextColor(
+                getResources().getColor(
+                        R.color.primary
+                )
+        );
+
+        addTime.setPadding(
+                12,
+                8,
+                12,
+                8
+        );
+
+        titleRow.addView(addTime);
+
+
+
+        layout.addView(titleRow);
+
+        LinearLayout timesContainer =
+                new LinearLayout(requireContext());
+
+        timesContainer.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        layout.addView(timesContainer);
+
+        for (String time : times) {
+            addTimeRow(
+                    timesContainer,
+                    times,
+                    time
+            );
+        }
+
+        checkBox.setOnCheckedChangeListener(
+                (buttonView, isChecked) -> {
+
+                    if (!isChecked) {
+
+                        times.clear();
+                        timesContainer.removeAllViews();
+
+                    } else if (times.isEmpty()) {
+
+                        showTimePicker(
+                                timesContainer,
+                                times
+                        );
+                    }
+                }
+        );
+
+        addTime.setOnClickListener(v -> {
+
+            if (!checkBox.isChecked()) {
+                checkBox.setChecked(true);
+            } else {
+                showTimePicker(
+                        timesContainer,
+                        times
+                );
+            }
+        });
+
+        card.addView(layout);
+
+        prayerContainer.addView(card);
+    }
+
+    private void showTimePicker(
+            LinearLayout container,
+            ArrayList<String> times) {
+
+        Calendar calendar =
+                Calendar.getInstance();
+
+        int hour =
+                calendar.get(Calendar.HOUR_OF_DAY);
+
+        int minute =
+                calendar.get(Calendar.MINUTE);
+
+        TimePickerDialog dialog =
+                new TimePickerDialog(
+                        requireContext(),
+                        (view, selectedHour, selectedMinute) -> {
+
+                            String time =
+                                    String.format(
+                                            Locale.getDefault(),
+                                            "%02d:%02d",
+                                            selectedHour,
+                                            selectedMinute
+                                    );
+
+                            if (!times.contains(time)) {
+
+                                times.add(time);
+
+                                showSelectedDay();
+                            }
+
+                        },
+                        hour,
+                        minute,
+                        true
+                );
+
+        dialog.show();
+    }
+
+    private void addTimeRow(
+            LinearLayout container,
+            ArrayList<String> times,
+            String time) {
+
+        LinearLayout row =
+                new LinearLayout(requireContext());
+
+        row.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
+
+        row.setGravity(
+                android.view.Gravity.CENTER_VERTICAL
+        );
+
+        TextView timeText =
+                new TextView(requireContext());
+
+        timeText.setText("🕐  " + time);
+        timeText.setTextSize(17);
+        timeText.setTextColor(
+                getResources().getColor(
+                        android.R.color.black
+                )
+        );
+
+        row.addView(
+                timeText,
+                new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1
+                )
+        );
+
+        TextView delete =
+                new TextView(requireContext());
+
+        delete.setText("✕");
+        delete.setTextSize(20);
+        delete.setTextColor(
+                getResources().getColor(
+                        android.R.color.holo_red_dark
+                )
+        );
+
+        delete.setPadding(
+                20,
+                8,
+                8,
+                8
+        );
+
+        row.addView(delete);
+
+        delete.setOnClickListener(v -> {
+
+            times.remove(time);
+
+            showSelectedDay();
+        });
+
+        container.addView(row);
+    }
+
+
+
+
+
+    private void continueToNextStep() {
+
+        /*
+         * לוקחים את הנתונים שהגיעו מהמסכים הקודמים.
+         */
+        Bundle oldData = getArguments();
+
+        /*
+         * יוצרים Bundle חדש כדי לא לשנות ישירות
+         * את ה-Bundle של המסך הקודם.
+         */
+        final Bundle data;
+
+        if (oldData == null) {
+            data = new Bundle();
+        } else {
+            data = new Bundle(oldData);
+        }
+
+        /*
+         * ==========================================
+         * שמירת נתוני התפילות
+         * ==========================================
+         *
+         * המבנה:
+         *
+         * day
+         *   -> prayer
+         *       -> list of times
+         */
+
+        HashMap<String, HashMap<String, ArrayList<String>>>
+                bundlePrayerData =
+                new HashMap<>();
+
+        for (Map.Entry<String, Map<String, ArrayList<String>>> dayEntry
+                : prayerData.entrySet()) {
+
+            HashMap<String, ArrayList<String>> prayers =
+                    new HashMap<>();
+
+            for (Map.Entry<String, ArrayList<String>> prayerEntry
+                    : dayEntry.getValue().entrySet()) {
+
+                prayers.put(
+                        prayerEntry.getKey(),
+                        new ArrayList<>(
+                                prayerEntry.getValue()
+                        )
+                );
+            }
+
+            bundlePrayerData.put(
+                    dayEntry.getKey(),
+                    prayers
+            );
+        }
+
+        data.putSerializable(
+                "prayerData",
+                bundlePrayerData
+        );
+
+        data.putBoolean(
+                "prayersCompleted",
+                true
+        );
+
+        /*
+         * ==========================================
+         * מעבר למסך המאפיינים
+         * ==========================================
+         */
+
+        AddSynagogue05FeaturesFragment nextFragment =
+                new AddSynagogue05FeaturesFragment();
+
+        nextFragment.setArguments(data);
+
+        requireActivity()
+                .getSupportFragmentManager()
+                .beginTransaction()
+                .replace(
+                        R.id.fragment_container,
+                        nextFragment
+                )
+                .addToBackStack(null)
+                .commit();
+    }
+
+
+
+
+}
