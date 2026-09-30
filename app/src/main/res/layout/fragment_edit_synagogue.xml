@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:layoutDirection="rtl">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="עריכת בית כנסת"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:textColor="#222222"
+            android:gravity="center"
+            android:layout_marginBottom="25dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="שם בית הכנסת"
+            android:textSize="16sp"
+            android:textColor="#333333"/>
+
+        <EditText
+            android:id="@+id/editSynagogueName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="שם בית הכנסת"
+            android:inputType="textCapSentences|textMultiLine"
+            android:textDirection="rtl"
+            android:layout_marginBottom="18dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="כתובת"
+            android:textSize="16sp"
+            android:textColor="#333333"/>
+
+        <EditText
+            android:id="@+id/editAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="רחוב, מספר, עיר"
+            android:inputType="textPostalAddress"
+            android:textDirection="rtl"
+            android:layout_marginBottom="18dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="טלפון"
+            android:textSize="16sp"
+            android:textColor="#333333"/>
+
+        <EditText
+            android:id="@+id/editPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="050-1234567"
+            android:inputType="phone"
+            android:textDirection="ltr"
+            android:layout_marginBottom="18dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="שם משתמש"
+            android:textSize="16sp"
+            android:textColor="#333333"/>
+
+        <EditText
+            android:id="@+id/editUsername"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="שם משתמש"
+            android:inputType="text"
+            android:textDirection="ltr"
+            android:layout_marginBottom="25dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="שעות פתיחה ומידע נוסף"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginTop="5dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="הוסף שורת שעות"
+                android:textSize="14sp"
+                android:textColor="#777777"/>
+
+            <Button
+                android:id="@+id/buttonAddOpeningHour"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="+"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="הוסף כותרת / הפרדה"
+                android:textSize="14sp"
+                android:textColor="#777777"/>
+
+            <Button
+                android:id="@+id/buttonAddHeader"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:text="+"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/openingHoursContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layoutDirection="rtl"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="25dp"/>
+
+        <Button
+            android:id="@+id/buttonSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="שמור שינויים"
+            android:textSize="18sp"/>
+
+    </LinearLayout>
+</ScrollView>
