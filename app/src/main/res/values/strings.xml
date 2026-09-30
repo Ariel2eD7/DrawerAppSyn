@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">DrawerAppSyn</string>
+
+
+    <string name="open_drawer">פתח תפריט</string>
+    <string name="close_drawer">סגור תפריט</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
