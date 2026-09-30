@@ -8,6 +8,8 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.navigation.NavigationView;
+import com.example.synagogue.UsersFragment;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,6 +49,11 @@ public class MainActivity extends AppCompatActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, new UsersFragment())
+                        .commit();
+
 
                 // כאן יהיה מסך הבית
 
