@@ -1,13 +1,9 @@
-package com.example.synagogue;
+        package com.example.register;
 
-import android.graphics.Color;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,13 +12,15 @@ import androidx.fragment.app.Fragment;
 import com.example.drawerappsyn.R;
 
 
-public class AddSynagogue02BasicFragment extends Fragment {
 
-    private EditText editTextName;
-    private EditText editTextPhone;
-    private EditText editTextDescription;
+import android.graphics.Color;
+import android.widget.TextView;
 
-    public AddSynagogue02BasicFragment() {
+
+
+public class AddSynagogue01WelcomeFragment extends Fragment {
+
+    public AddSynagogue01WelcomeFragment() {
         // Required empty public constructor
     }
 
@@ -34,7 +32,7 @@ public class AddSynagogue02BasicFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
 
         return inflater.inflate(
-                R.layout.fragment_add_synagogue_02_basic,
+                R.layout.fragment_add_synagogue_01_welcome,
                 container,
                 false
         );
@@ -47,126 +45,41 @@ public class AddSynagogue02BasicFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
-        setupProgress(view, 4);
+        setupProgress(view, 1);
 
-        editTextName =
-                view.findViewById(R.id.editTextSynagogueName);
 
-        editTextPhone =
-                view.findViewById(R.id.editTextSynagoguePhone);
-
-        editTextDescription =
-                view.findViewById(R.id.editTextSynagogueDescription);
-
-        view.findViewById(R.id.buttonBack)
-                .setOnClickListener(v ->
-                        requireActivity()
-                                .getSupportFragmentManager()
-                                .popBackStack()
+        View buttonStart =
+                view.findViewById(
+                        R.id.buttonStartRegistration
                 );
 
-        view.findViewById(R.id.buttonNext)
-                .setOnClickListener(v ->
-                        continueToNextStep()
-                );
-    }
+        buttonStart.setOnClickListener(v -> {
 
-    private void continueToNextStep() {
+            // יוצרים Bundle חדש עבור כל תהליך ההרשמה.
+            // כל מסך בהמשך יקבל אותו, יוסיף אליו
+            // את הנתונים שלו ויעביר אותו הלאה.
+            Bundle data = new Bundle();
 
-        String name =
-                editTextName.getText()
-                        .toString()
-                        .trim();
-
-        String phone =
-                editTextPhone.getText()
-                        .toString()
-                        .trim();
-
-        String description =
-                editTextDescription.getText()
-                        .toString()
-                        .trim();
-
-        if (TextUtils.isEmpty(name)) {
-
-            editTextName.setError(
-                    "יש להזין את שם בית הכנסת"
+            data.putBoolean(
+                    "registrationStarted",
+                    true
             );
 
-            editTextName.requestFocus();
+            AddSynagogue02AccountFragment nextFragment =
+                    new AddSynagogue02AccountFragment();
 
-            return;
-        }
+            nextFragment.setArguments(data);
 
-        if (TextUtils.isEmpty(phone)) {
-
-            editTextPhone.setError(
-                    "יש להזין מספר טלפון"
-            );
-
-            editTextPhone.requestFocus();
-
-            return;
-        }
-
-        /*
-         * חשוב:
-         *
-         * שומרים את כל הנתונים שהגיעו
-         * מהשלבים הקודמים.
-         *
-         * כך ownerId / email / נתוני
-         * אימות האימייל לא הולכים לאיבוד.
-         */
-
-        Bundle oldData = getArguments();
-
-        Bundle data;
-
-        if (oldData != null) {
-            data = new Bundle(oldData);
-        } else {
-            data = new Bundle();
-        }
-
-        data.putString(
-                "synagogueName",
-                name
-        );
-
-        data.putString(
-                "synagoguePhone",
-                phone
-        );
-
-        data.putString(
-                "synagogueDescription",
-                description
-        );
-
-        data.putBoolean(
-                "basicDetailsCompleted",
-                true
-        );
-
-        AddSynagogue03LocationFragment nextFragment =
-                new AddSynagogue03LocationFragment();
-
-        nextFragment.setArguments(data);
-
-        requireActivity()
-                .getSupportFragmentManager()
-                .beginTransaction()
-                .replace(
-                        R.id.fragment_container,
-                        nextFragment
-                )
-                .addToBackStack(null)
-                .commit();
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(
+                            R.id.fragment_container,
+                            nextFragment
+                    )
+                    .addToBackStack(null)
+                    .commit();
+        });
     }
-
-
 
     private void setupProgress(View view, int currentStep)
     {
@@ -281,6 +194,7 @@ public class AddSynagogue02BasicFragment extends Fragment {
                         + " מתוך 6"
         );
     }
+
 
 
 }

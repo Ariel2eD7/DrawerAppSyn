@@ -1,24 +1,20 @@
 package com.example.synagogue;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.drawerappsyn.R;
@@ -28,323 +24,931 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class SynagogueDetailsFragment extends Fragment implements OnMapReadyCallback {
+public class SynagogueDetailsFragment extends Fragment
+        implements OnMapReadyCallback {
 
-    private static final String ARG_NAME = "name", ARG_ADDRESS = "address",
-            ARG_PHONE = "phone", ARG_OPENING_HOURS = "openingHours",
-            ARG_LATITUDE = "latitude", ARG_LONGITUDE = "longitude";
-
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private static final String ARG_SYNAGOGUE = "synagogue";
 
     private GoogleMap googleMap;
-    private String phoneNumber = "";
-    private double latitude, longitude;
 
-    public SynagogueDetailsFragment() {}
+    private String phone = "";
+    private double latitude = 0;
+    private double longitude = 0;
+
+    private LinearLayout prayersContainer;
+    private LinearLayout featuresContainer;
+
+    public SynagogueDetailsFragment() {
+        // Required empty constructor
+    }
 
     public static SynagogueDetailsFragment newInstance(
-            String name, String address, String phone, String username,
-            double latitude, double longitude,
-            ArrayList<HashMap<String, String>> openingHours) {
+            Synagogue synagogue) {
 
-        SynagogueDetailsFragment f = new SynagogueDetailsFragment();
-        Bundle b = new Bundle();
+        SynagogueDetailsFragment fragment =
+                new SynagogueDetailsFragment();
 
-        b.putString(ARG_NAME, name);
-        b.putString(ARG_ADDRESS, address);
-        b.putString(ARG_PHONE, phone);
-        b.putSerializable(ARG_OPENING_HOURS, openingHours);
-        b.putDouble(ARG_LATITUDE, latitude);
-        b.putDouble(ARG_LONGITUDE, longitude);
+        Bundle args = new Bundle();
 
-        f.setArguments(b);
-        return f;
+        args.putSerializable(
+                ARG_SYNAGOGUE,
+                synagogue
+        );
+
+        fragment.setArguments(args);
+
+        return fragment;
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(
+            @NonNull LayoutInflater inflater,
+            @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
+
+        return inflater.inflate(
+                R.layout.fragment_synagogue_details,
+                container,
+                false
+        );
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_synagogue_details, container, false);
-    }
+    public void onViewCreated(
+            @NonNull View view,
+            @Nullable Bundle savedInstanceState) {
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+        super.onViewCreated(
+                view,
+                savedInstanceState
+        );
 
-        TextView nameView = view.findViewById(R.id.textDetailName);
-        TextView addressView = view.findViewById(R.id.textDetailAddress);
-        LinearLayout hoursContainer = view.findViewById(R.id.openingHoursContainer);
-        Button callButton = view.findViewById(R.id.buttonCall);
-        LinearLayout navigateButton = view.findViewById(R.id.buttonNavigate);
+        TextView textName =
+                view.findViewById(R.id.textDetailName);
 
-        Bundle b = getArguments();
-        if (b == null) return;
+        TextView textAddress =
+                view.findViewById(R.id.textDetailAddress);
 
-        String name = b.getString(ARG_NAME, "");
-        String address = b.getString(ARG_ADDRESS, "");
-        phoneNumber = b.getString(ARG_PHONE, "").trim();
-        latitude = b.getDouble(ARG_LATITUDE, 0);
-        longitude = b.getDouble(ARG_LONGITUDE, 0);
+        TextView textDescription =
+                view.findViewById(R.id.textDetailDescription);
 
-        nameView.setText(name.isEmpty() ? "בית כנסת" : name);
-        addressView.setText(address.isEmpty() ? "לא הוזנה כתובת" : address);
-        addressView.setTextColor(address.isEmpty() ? Color.GRAY : Color.rgb(32, 33, 36));
+        TextView textPhone =
+                view.findViewById(R.id.textDetailPhone);
 
-        if (phoneNumber.isEmpty()) {
-            callButton.setText("📞  לא הוזן טלפון");
-            callButton.setEnabled(false);
-            callButton.setAlpha(.5f);
-        } else {
-            callButton.setText("📞  " + phoneNumber);
-            callButton.setOnClickListener(v -> callPhone());
-        }
+        MaterialButton buttonCall =
+                view.findViewById(R.id.buttonCall);
 
-        if (latitude == 0 && longitude == 0) {
-            navigateButton.setEnabled(false);
-            navigateButton.setAlpha(.5f);
-        } else {
-            navigateButton.setOnClickListener(v -> openNavigation());
-        }
+        MaterialButton buttonNavigate =
+                view.findViewById(R.id.buttonNavigate);
 
-        ArrayList<HashMap<String, String>> hours =
-                (ArrayList<HashMap<String, String>>) b.getSerializable(ARG_OPENING_HOURS);
+        View buttonBack =
+                view.findViewById(R.id.buttonBack);
 
-        if (hours == null || hours.isEmpty()) {
-            TextView empty = new TextView(requireContext());
-            empty.setText("שעות הפתיחה לא הוזנו");
-            empty.setTextSize(16);
-            empty.setTextColor(Color.GRAY);
-            empty.setGravity(Gravity.CENTER);
-            empty.setPadding(16, 20, 16, 20);
-            hoursContainer.addView(empty);
-        } else {
-            for (HashMap<String, String> hour : hours) {
-                if (hour == null) continue;
+        prayersContainer =
+                view.findViewById(R.id.prayersContainer);
 
-                if ("header".equals(hour.get("type"))) {
-                    addHeaderView(hoursContainer, hour.get("text"));
-                } else if ("normal".equals(hour.get("type"))) {
-                    addOpeningHourView(
-                            hoursContainer,
-                            hour.get("title"),
-                            hour.get("content")
-                    );
-                }
-            }
-        }
+        featuresContainer =
+                view.findViewById(R.id.featuresContainer);
 
-        SupportMapFragment map =
-                (SupportMapFragment) getChildFragmentManager()
-                        .findFragmentById(R.id.detailMap);
+        buttonBack.setOnClickListener(
+                v -> goBack()
+        );
 
-        if (map != null) map.getMapAsync(this);
-    }
+        Synagogue synagogue = getSynagogue();
 
-    private void callPhone() {
-        if (phoneNumber.isEmpty()) return;
+        if (synagogue == null) {
 
-        startActivity(new Intent(
-                Intent.ACTION_DIAL,
-                Uri.parse("tel:" + Uri.encode(phoneNumber))
-        ));
-    }
+            Toast.makeText(
+                    requireContext(),
+                    "לא נמצאו פרטי בית הכנסת",
+                    Toast.LENGTH_LONG
+            ).show();
 
-    private void openNavigation() {
-        if (latitude == 0 && longitude == 0) return;
-
-        String url = "https://waze.com/ul?ll=" +
-                latitude + "," + longitude + "&navigate=yes";
-
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        intent.setPackage("com.waze");
-
-        try {
-            startActivity(intent);
-        } catch (Exception e) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-        }
-    }
-
-    private void addOpeningHourView(
-            LinearLayout container, String title, String content) {
-
-        LinearLayout row = createRow();
-
-        TextView titleView = new TextView(requireContext());
-        titleView.setText(title == null ? "" : title);
-        titleView.setTextSize(16);
-        titleView.setTextColor(Color.rgb(45, 45, 45));
-        titleView.setTypeface(null, Typeface.BOLD);
-        titleView.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
-
-        TextView contentView = new TextView(requireContext());
-        contentView.setText(content == null ? "" : content);
-        contentView.setTextSize(16);
-        contentView.setTextColor(Color.rgb(80, 80, 80));
-        contentView.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
-
-        LinearLayout.LayoutParams p =
-                new LinearLayout.LayoutParams(0, -2, 1);
-        p.setMargins(0, 0, 8, 0);
-        titleView.setLayoutParams(p);
-
-        p = new LinearLayout.LayoutParams(0, -2, 1);
-        p.setMargins(8, 0, 0, 0);
-        contentView.setLayoutParams(p);
-
-        row.addView(titleView);
-        row.addView(contentView);
-        container.addView(row);
-    }
-
-    private LinearLayout createRow() {
-        LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(16, 14, 16, 14);
-        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.WHITE);
-        bg.setCornerRadius(18);
-        bg.setStroke(1, Color.rgb(232, 234, 237));
-        row.setBackground(bg);
-
-        LinearLayout.LayoutParams p =
-                new LinearLayout.LayoutParams(-1, -2);
-        p.setMargins(0, 0, 0, 8);
-        row.setLayoutParams(p);
-
-        return row;
-    }
-
-    private void addHeaderView(
-            LinearLayout container, String text) {
-
-        if (text == null || text.trim().isEmpty()) return;
-
-        View spacer = new View(requireContext());
-        spacer.setLayoutParams(new LinearLayout.LayoutParams(-1, 10));
-        container.addView(spacer);
-
-        LinearLayout row = createHeaderRow();
-
-        View line = new View(requireContext());
-        line.setBackgroundColor(Color.rgb(25, 118, 210));
-
-        LinearLayout.LayoutParams lineParams =
-                new LinearLayout.LayoutParams(5, 36);
-        lineParams.setMargins(0, 0, 12, 0);
-        row.addView(line, lineParams);
-
-        TextView title = new TextView(requireContext());
-        title.setText(text.trim());
-        title.setTextSize(18);
-        title.setTextColor(Color.rgb(25, 75, 120));
-        title.setTypeface(null, Typeface.BOLD);
-        title.setGravity(Gravity.CENTER);
-        title.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-
-        LinearLayout.LayoutParams titleParams =
-                new LinearLayout.LayoutParams(0, -2, 1);
-        titleParams.setMargins(0, 0, 12, 0);
-        row.addView(title, titleParams);
-
-        container.addView(row);
-    }
-
-    private LinearLayout createHeaderRow() {
-        LinearLayout row = new LinearLayout(requireContext());
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(16, 14, 16, 14);
-        row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.rgb(227, 242, 253));
-        bg.setCornerRadius(16);
-        bg.setStroke(1, Color.rgb(187, 222, 251));
-        row.setBackground(bg);
-
-        LinearLayout.LayoutParams p =
-                new LinearLayout.LayoutParams(-1, -2);
-        p.setMargins(0, 0, 0, 8);
-        row.setLayoutParams(p);
-
-        return row;
-    }
-
-    @Override
-    public void onMapReady(@NonNull GoogleMap map) {
-        googleMap = map;
-
-        googleMap.getUiSettings().setZoomControlsEnabled(true);
-        googleMap.getUiSettings().setMapToolbarEnabled(true);
-
-        Bundle b = getArguments();
-        if (b == null) return;
-
-        double lat = b.getDouble(ARG_LATITUDE, 0);
-        double lng = b.getDouble(ARG_LONGITUDE, 0);
-
-        if (lat != 0 || lng != 0) {
-            LatLng location = new LatLng(lat, lng);
-
-            googleMap.addMarker(new MarkerOptions()
-                    .position(location)
-                    .title(b.getString(ARG_NAME, "בית כנסת")));
-
-            googleMap.moveCamera(
-                    CameraUpdateFactory.newLatLngZoom(location, 16f)
-            );
-        }
-
-        enableUserLocation();
-    }
-
-    private void enableUserLocation() {
-        if (ContextCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(
-                requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            requestPermissions(
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                    },
-                    LOCATION_PERMISSION_REQUEST_CODE
-            );
             return;
         }
 
-        try {
-            googleMap.setMyLocationEnabled(true);
-            googleMap.getUiSettings().setMyLocationButtonEnabled(true);
-        } catch (SecurityException ignored) {}
+        // ---------------------------------------------------------
+        // Basic information
+        // ---------------------------------------------------------
+
+        textName.setText(
+                valueOrDefault(
+                        synagogue.getName(),
+                        "בית כנסת"
+                )
+        );
+
+        textAddress.setText(
+                valueOrDefault(
+                        synagogue.getAddress(),
+                        "כתובת לא הוגדרה"
+                )
+        );
+
+        // ---------------------------------------------------------
+        // Description
+        // ---------------------------------------------------------
+
+        String description =
+                synagogue.getDescription();
+
+        if (TextUtils.isEmpty(description)) {
+
+            textDescription.setVisibility(
+                    View.GONE
+            );
+
+        } else {
+
+            textDescription.setVisibility(
+                    View.VISIBLE
+            );
+
+            textDescription.setText(
+                    description.trim()
+            );
+        }
+
+        // ---------------------------------------------------------
+        // Phone
+        // ---------------------------------------------------------
+
+        phone =
+                valueOrDefault(
+                        synagogue.getPhone(),
+                        ""
+                ).trim();
+
+        if (phone.isEmpty()) {
+
+            textPhone.setText(
+                    "טלפון לא הוגדר"
+            );
+
+            buttonCall.setEnabled(false);
+            buttonCall.setAlpha(0.45f);
+
+        } else {
+
+            textPhone.setText(phone);
+
+            buttonCall.setEnabled(true);
+            buttonCall.setAlpha(1f);
+
+            buttonCall.setOnClickListener(
+                    v -> callPhone()
+            );
+        }
+
+        // ---------------------------------------------------------
+        // Location
+        // ---------------------------------------------------------
+
+        latitude =
+                synagogue.getLatitude();
+
+        longitude =
+                synagogue.getLongitude();
+
+        if (!hasLocation()) {
+
+            buttonNavigate.setEnabled(false);
+            buttonNavigate.setAlpha(0.45f);
+
+        } else {
+
+            buttonNavigate.setEnabled(true);
+            buttonNavigate.setAlpha(1f);
+
+            buttonNavigate.setOnClickListener(
+                    v -> openNavigation()
+            );
+        }
+
+        // ---------------------------------------------------------
+        // Prayers
+        // ---------------------------------------------------------
+
+        buildPrayers(
+                synagogue.getPrayers()
+        );
+
+        // ---------------------------------------------------------
+        // Features
+        // ---------------------------------------------------------
+
+        buildFeatures(
+                synagogue.getFeatures()
+        );
+
+        // ---------------------------------------------------------
+        // Map
+        // ---------------------------------------------------------
+
+        SupportMapFragment map =
+                (SupportMapFragment)
+                        getChildFragmentManager()
+                                .findFragmentById(
+                                        R.id.detailMap
+                                );
+
+        if (map != null) {
+            map.getMapAsync(this);
+        }
     }
 
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode, @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
+    // =============================================================
+    // Navigation
+    // =============================================================
 
-        super.onRequestPermissionsResult(
-                requestCode, permissions, grantResults);
+    private void goBack() {
 
-        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) return;
+        if (!isAdded()) {
+            return;
+        }
 
-        for (int result : grantResults) {
-            if (result == PackageManager.PERMISSION_GRANTED) {
-                enableUserLocation();
-                break;
+        requireActivity()
+                .getSupportFragmentManager()
+                .popBackStack();
+    }
+
+    // =============================================================
+    // Synagogue
+    // =============================================================
+
+    private Synagogue getSynagogue() {
+
+        Bundle args = getArguments();
+
+        if (args == null) {
+            return null;
+        }
+
+        Object object =
+                args.getSerializable(
+                        ARG_SYNAGOGUE
+                );
+
+        if (object instanceof Synagogue) {
+            return (Synagogue) object;
+        }
+
+        return null;
+    }
+
+    // =============================================================
+    // Helpers
+    // =============================================================
+
+    private String valueOrDefault(
+            String value,
+            String fallback) {
+
+        if (TextUtils.isEmpty(value)) {
+            return fallback;
+        }
+
+        return value.trim();
+    }
+
+    private boolean hasLocation() {
+
+        return latitude != 0 &&
+                longitude != 0;
+    }
+
+    // =============================================================
+    // Phone
+    // =============================================================
+
+    private void callPhone() {
+
+        if (phone.isEmpty()) {
+            return;
+        }
+
+        Intent intent =
+                new Intent(
+                        Intent.ACTION_DIAL,
+                        Uri.parse(
+                                "tel:" +
+                                        Uri.encode(phone)
+                        )
+                );
+
+        try {
+
+            startActivity(intent);
+
+        } catch (Exception e) {
+
+            Toast.makeText(
+                    requireContext(),
+                    "לא ניתן לפתוח את אפליקציית הטלפון",
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+    }
+
+    // =============================================================
+    // Navigation / Waze / Google Maps
+    // =============================================================
+
+    private void openNavigation() {
+
+        if (!hasLocation()) {
+            return;
+        }
+
+        String coordinates =
+                latitude +
+                        "," +
+                        longitude;
+
+        // Try Waze first
+        String wazeUrl =
+                "https://waze.com/ul?ll=" +
+                        coordinates +
+                        "&navigate=yes";
+
+        Intent wazeIntent =
+                new Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(wazeUrl)
+                );
+
+        wazeIntent.setPackage("com.waze");
+
+        try {
+
+            startActivity(wazeIntent);
+            return;
+
+        } catch (Exception ignored) {
+            // Waze is not installed.
+        }
+
+        // Fallback to Google Maps
+        String mapsUrl =
+                "https://www.google.com/maps/dir/?api=1" +
+                        "&destination=" +
+                        coordinates;
+
+        Intent mapsIntent =
+                new Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(mapsUrl)
+                );
+
+        try {
+
+            startActivity(mapsIntent);
+
+        } catch (Exception e) {
+
+            Toast.makeText(
+                    requireContext(),
+                    "לא נמצאה אפליקציית ניווט",
+                    Toast.LENGTH_SHORT
+            ).show();
+        }
+    }
+
+    // =============================================================
+    // Prayers
+    // =============================================================
+
+    private void buildPrayers(
+            Map<String, Map<String, ArrayList<String>>> prayers) {
+
+        prayersContainer.removeAllViews();
+
+        if (prayers == null ||
+                prayers.isEmpty()) {
+
+            addEmptyState(
+                    prayersContainer,
+                    "לא הוגדרו זמני תפילות"
+            );
+
+            return;
+        }
+
+        String[] dayKeys = {
+                "sunday",
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "shabbat"
+        };
+
+        String[] dayNames = {
+                "ראשון",
+                "שני",
+                "שלישי",
+                "רביעי",
+                "חמישי",
+                "שישי",
+                "שבת"
+        };
+
+        String[] prayerKeys = {
+                "shacharit",
+                "mincha",
+                "maariv",
+                "kabbalatShabbat",
+                "musaf",
+                "havdalah"
+        };
+
+        String[] prayerNames = {
+                "שחרית",
+                "מנחה",
+                "ערבית",
+                "קבלת שבת",
+                "מוסף",
+                "הבדלה"
+        };
+
+        boolean found = false;
+
+        for (int i = 0;
+             i < dayKeys.length;
+             i++) {
+
+            Map<String, ArrayList<String>> dayPrayers =
+                    prayers.get(dayKeys[i]);
+
+            if (dayPrayers == null ||
+                    dayPrayers.isEmpty()) {
+                continue;
+            }
+
+            ArrayList<String> dayTimes =
+                    new ArrayList<>();
+
+            for (int j = 0;
+                 j < prayerKeys.length;
+                 j++) {
+
+                ArrayList<String> times =
+                        dayPrayers.get(
+                                prayerKeys[j]
+                        );
+
+                if (times == null ||
+                        times.isEmpty()) {
+                    continue;
+                }
+
+                ArrayList<String> validTimes =
+                        new ArrayList<>();
+
+                for (String time : times) {
+
+                    if (time == null) {
+                        continue;
+                    }
+
+                    String cleanTime =
+                            time.trim();
+
+                    if (!cleanTime.isEmpty()) {
+                        validTimes.add(cleanTime);
+                    }
+                }
+
+                if (validTimes.isEmpty()) {
+                    continue;
+                }
+
+                found = true;
+
+                StringBuilder timeLine =
+                        new StringBuilder();
+
+                timeLine.append(
+                        prayerNames[j]
+                );
+
+                timeLine.append(": ");
+
+                for (int k = 0;
+                     k < validTimes.size();
+                     k++) {
+
+                    if (k > 0) {
+                        timeLine.append(", ");
+                    }
+
+                    timeLine.append(
+                            validTimes.get(k)
+                    );
+                }
+
+                dayTimes.add(
+                        timeLine.toString()
+                );
+            }
+
+            if (!dayTimes.isEmpty()) {
+
+                addDayPrayerCard(
+                        dayNames[i],
+                        dayTimes
+                );
             }
         }
+
+        if (!found) {
+
+            addEmptyState(
+                    prayersContainer,
+                    "לא הוגדרו זמני תפילות"
+            );
+        }
+    }
+
+    private void addDayPrayerCard(
+            String dayName,
+            ArrayList<String> times) {
+
+        MaterialCardView card =
+                new MaterialCardView(
+                        requireContext()
+                );
+
+        card.setRadius(20);
+        card.setCardElevation(0);
+        card.setStrokeWidth(1);
+
+        card.setStrokeColor(
+                Color.rgb(
+                        228,
+                        234,
+                        241
+                )
+        );
+
+        LinearLayout content =
+                new LinearLayout(
+                        requireContext()
+                );
+
+        content.setOrientation(
+                LinearLayout.VERTICAL
+        );
+
+        content.setPadding(
+                18,
+                16,
+                18,
+                16
+        );
+
+        TextView day =
+                new TextView(
+                        requireContext()
+                );
+
+        day.setText(
+                "יום " + dayName
+        );
+
+        day.setTextSize(18);
+        day.setTextColor(
+                Color.rgb(
+                        24,
+                        34,
+                        48
+                )
+        );
+
+        day.setTypeface(
+                null,
+                android.graphics.Typeface.BOLD
+        );
+
+        day.setGravity(
+                Gravity.START
+        );
+
+        content.addView(day);
+
+        for (String time : times) {
+
+            TextView prayer =
+                    new TextView(
+                            requireContext()
+                    );
+
+            prayer.setText(
+                    "🕐  " + time
+            );
+
+            prayer.setTextSize(15);
+            prayer.setTextColor(
+                    Color.rgb(
+                            75,
+                            88,
+                            102
+                    )
+            );
+
+            prayer.setGravity(
+                    Gravity.START
+            );
+
+            prayer.setPadding(
+                    0,
+                    9,
+                    0,
+                    0
+            );
+
+            content.addView(prayer);
+        }
+
+        card.addView(content);
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        params.setMargins(
+                0,
+                0,
+                0,
+                12
+        );
+
+        card.setLayoutParams(params);
+
+        prayersContainer.addView(card);
+    }
+
+    // =============================================================
+    // Features
+    // =============================================================
+
+    private void buildFeatures(
+            Map<String, Boolean> features) {
+
+        featuresContainer.removeAllViews();
+
+        if (features == null ||
+                features.isEmpty()) {
+
+            addEmptyState(
+                    featuresContainer,
+                    "לא הוגדרו מאפיינים"
+            );
+
+            return;
+        }
+
+        Map<String, String> names =
+                new HashMap<>();
+
+        names.put(
+                "womenSection",
+                "עזרת נשים"
+        );
+
+        names.put(
+                "wheelchairAccess",
+                "נגישות לכיסאות גלגלים"
+        );
+
+        names.put(
+                "parking",
+                "חניה"
+        );
+
+        names.put(
+                "airConditioning",
+                "מיזוג"
+        );
+
+        names.put(
+                "heating",
+                "חימום"
+        );
+
+        names.put(
+                "mikveh",
+                "מקווה"
+        );
+
+        names.put(
+                "torahLessons",
+                "שיעורי תורה"
+        );
+
+        names.put(
+                "childrenActivities",
+                "פעילות לילדים"
+        );
+
+        names.put(
+                "onlineBroadcast",
+                "שידורים ושיעורים אונליין"
+        );
+
+        names.put(
+                "library",
+                "ספרייה / ספרי קודש"
+        );
+
+        names.put(
+                "kiddush",
+                "קידוש"
+        );
+
+        names.put(
+                "security",
+                "אבטחה"
+        );
+
+        boolean found = false;
+
+        for (Map.Entry<String, Boolean> entry :
+                features.entrySet()) {
+
+            if (!Boolean.TRUE.equals(
+                    entry.getValue())) {
+                continue;
+            }
+
+            found = true;
+
+            String key =
+                    entry.getKey();
+
+            String name =
+                    names.get(key);
+
+            if (TextUtils.isEmpty(name)) {
+                name = key;
+            }
+
+            addFeatureChip(name);
+        }
+
+        if (!found) {
+
+            addEmptyState(
+                    featuresContainer,
+                    "לא הוגדרו מאפיינים"
+            );
+        }
+    }
+
+    private void addFeatureChip(
+            String name) {
+
+        TextView chip =
+                new TextView(
+                        requireContext()
+                );
+
+        chip.setText(
+                "✓  " + name
+        );
+
+        chip.setTextSize(14);
+
+        chip.setTextColor(
+                Color.rgb(
+                        25,
+                        103,
+                        210
+                )
+        );
+
+        chip.setGravity(
+                Gravity.CENTER_VERTICAL
+        );
+
+        chip.setPadding(
+                14,
+                10,
+                14,
+                10
+        );
+
+        chip.setBackgroundResource(
+                R.drawable.bg_feature_chip
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        params.setMargins(
+                0,
+                0,
+                0,
+                8
+        );
+
+        chip.setLayoutParams(params);
+
+        featuresContainer.addView(chip);
+    }
+
+    // =============================================================
+    // Empty state
+    // =============================================================
+
+    private void addEmptyState(
+            LinearLayout container,
+            String message) {
+
+        TextView empty =
+                new TextView(
+                        requireContext()
+                );
+
+        empty.setText(message);
+        empty.setTextSize(15);
+
+        empty.setTextColor(
+                Color.rgb(
+                        111,
+                        123,
+                        135
+                )
+        );
+
+        empty.setGravity(
+                Gravity.CENTER
+        );
+
+        empty.setPadding(
+                16,
+                20,
+                16,
+                20
+        );
+
+        container.addView(empty);
+    }
+
+    // =============================================================
+    // Google Maps
+    // =============================================================
+
+    @Override
+    public void onMapReady(
+            @NonNull GoogleMap map) {
+
+        googleMap = map;
+
+        googleMap.getUiSettings()
+                .setZoomControlsEnabled(true);
+
+        googleMap.getUiSettings()
+                .setMapToolbarEnabled(true);
+
+        if (!hasLocation()) {
+            return;
+        }
+
+        LatLng location =
+                new LatLng(
+                        latitude,
+                        longitude
+                );
+
+        googleMap.clear();
+
+        googleMap.addMarker(
+                new MarkerOptions()
+                        .position(location)
+                        .title("בית הכנסת")
+        );
+
+        googleMap.moveCamera(
+                CameraUpdateFactory.newLatLngZoom(
+                        location,
+                        16f
+                )
+        );
     }
 }

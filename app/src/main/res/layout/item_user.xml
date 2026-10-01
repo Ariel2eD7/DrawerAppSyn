@@ -1,43 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="3dp">
+
+    android:layout_marginBottom="12dp"
+
+    app:cardCornerRadius="22dp"
+    app:cardElevation="1dp"
+
+    app:strokeColor="#E4EAF1"
+    app:strokeWidth="1dp"
+
+    android:clickable="true"
+    android:focusable="true">
 
     <LinearLayout
+
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+
         android:orientation="vertical"
-        android:padding="16dp">
+
+        android:padding="18dp"
+
+        android:layoutDirection="rtl">
+
+        <!-- Name -->
 
         <TextView
             android:id="@+id/textName"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+
+            android:text="בית כנסת"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#222222"/>
+            android:textColor="#182230"/>
+
+        <!-- Address -->
 
         <TextView
             android:id="@+id/textAddress"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textSize="15sp"
-            android:textColor="#666666"/>
+
+            android:layout_marginTop="7dp"
+
+            android:text="📍 כתובת"
+            android:textSize="14sp"
+            android:textColor="#667382"
+
+            android:maxLines="2"
+            android:ellipsize="end"/>
+
+        <!-- Description -->
 
         <TextView
-            android:id="@+id/textPhone"
+            android:id="@+id/textDescription"
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="16sp"
-            android:textColor="#444444"/>
+
+            android:layout_marginTop="10dp"
+
+            android:text="תיאור בית הכנסת"
+            android:textSize="14sp"
+            android:textColor="#3F4D5A"
+
+            android:maxLines="2"
+            android:ellipsize="end"/>
+
+        <!-- Divider -->
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+
+            android:layout_marginTop="14dp"
+            android:layout_marginBottom="12dp"
+
+            android:background="#EDF1F5"/>
+
+        <!-- Meta -->
+
+        <TextView
+            android:id="@+id/textMeta"
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:text="🕐 3 שעות   •   ✓ 5 מאפיינים"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#1967D2"/>
 
     </LinearLayout>
-</androidx.cardview.widget.CardView>
+
+</com.google.android.material.card.MaterialCardView>

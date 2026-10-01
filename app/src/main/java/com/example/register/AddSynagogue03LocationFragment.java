@@ -1,4 +1,4 @@
-package com.example.synagogue;
+package com.example.register;
 
 import android.graphics.Color;
 import android.location.Address;
