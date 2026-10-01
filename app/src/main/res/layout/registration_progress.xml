@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/registrationProgress"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layoutDirection="ltr"
+    android:paddingTop="8dp"
+    android:paddingBottom="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/progressStep1"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:text="1"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_progress_inactive"/>
+
+        <View
+            android:id="@+id/progressLine1"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#D5DCE5"/>
+
+        <TextView
+            android:id="@+id/progressStep2"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:text="2"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#6F7B87"
+            android:background="@drawable/bg_progress_inactive"/>
+
+        <View
+            android:id="@+id/progressLine2"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#D5DCE5"/>
+
+        <TextView
+            android:id="@+id/progressStep3"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:text="3"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#6F7B87"
+            android:background="@drawable/bg_progress_inactive"/>
+
+        <View
+            android:id="@+id/progressLine3"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#D5DCE5"/>
+
+        <TextView
+            android:id="@+id/progressStep4"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:text="4"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#6F7B87"
+            android:background="@drawable/bg_progress_inactive"/>
+
+        <View
+            android:id="@+id/progressLine4"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#D5DCE5"/>
+
+        <TextView
+            android:id="@+id/progressStep5"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:text="5"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#6F7B87"
+            android:background="@drawable/bg_progress_inactive"/>
+
+        <View
+            android:id="@+id/progressLine5"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_weight="1"
+            android:background="#D5DCE5"/>
+
+        <TextView
+            android:id="@+id/progressStep6"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:text="6"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#6F7B87"
+            android:background="@drawable/bg_progress_inactive"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/progressStepText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="שלב 1 מתוך 6"
+        android:textColor="#6F7B87"
+        android:textSize="13sp"
+        android:layout_marginTop="6dp"
+        android:layoutDirection="rtl"/>
+
+</LinearLayout>

@@ -1,12 +1,13 @@
 package com.example.synagogue;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -14,17 +15,26 @@ import androidx.fragment.app.Fragment;
 
 import com.example.drawerappsyn.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 public class AddSynagogue02AccountFragment extends Fragment {
 
-    private EditText editUsername;
-    private EditText editPassword;
-    private EditText editConfirmPassword;
-    private EditText editPhone;
+    private FirebaseAuth auth;
 
-    public AddSynagogue02AccountFragment() {
-        // Required empty public constructor
-    }
+    private TextInputLayout emailLayout;
+    private TextInputLayout passwordLayout;
+    private TextInputLayout confirmPasswordLayout;
+
+    private TextInputEditText emailEditText;
+    private TextInputEditText passwordEditText;
+    private TextInputEditText confirmPasswordEditText;
+
+    private MaterialButton backButton;
+    private MaterialButton continueButton;
 
     @Nullable
     @Override
@@ -47,139 +57,426 @@ public class AddSynagogue02AccountFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
-        editUsername =
-                view.findViewById(R.id.editUsername);
+        setupProgress(view, 1);
 
-        editPassword =
-                view.findViewById(R.id.editPassword);
+        auth = FirebaseAuth.getInstance();
 
-        editConfirmPassword =
-                view.findViewById(R.id.editConfirmPassword);
+        emailLayout = view.findViewById(R.id.emailLayout);
+        passwordLayout = view.findViewById(R.id.passwordLayout);
+        confirmPasswordLayout =
+                view.findViewById(R.id.confirmPasswordLayout);
 
-        editPhone =
-                view.findViewById(R.id.editPhone);
+        emailEditText = view.findViewById(R.id.emailEditText);
+        passwordEditText = view.findViewById(R.id.passwordEditText);
+        confirmPasswordEditText =
+                view.findViewById(R.id.confirmPasswordEditText);
 
-        MaterialButton buttonBack =
-                view.findViewById(R.id.buttonBack);
+        backButton = view.findViewById(R.id.backButton);
+        continueButton = view.findViewById(R.id.continueButton);
 
-        MaterialButton buttonNext =
-                view.findViewById(R.id.buttonNext);
+        setupListeners();
+    }
 
-        buttonBack.setOnClickListener(v ->
+    private void setupListeners() {
+
+        backButton.setOnClickListener(v ->
                 requireActivity()
                         .getSupportFragmentManager()
                         .popBackStack()
         );
 
-        buttonNext.setOnClickListener(v ->
-                continueToVerification()
+        continueButton.setOnClickListener(v ->
+                validateAndCreateAccount()
         );
     }
 
-    private void continueToVerification() {
+    private void validateAndCreateAccount() {
 
-        String username =
-                editUsername.getText()
-                        .toString()
-                        .trim();
+        clearErrors();
 
-        String password =
-                editPassword.getText()
-                        .toString();
+        String email = getText(emailEditText);
+        String password = getText(passwordEditText);
+        String confirmPassword = getText(confirmPasswordEditText);
 
-        String confirmPassword =
-                editConfirmPassword.getText()
-                        .toString();
+        if (TextUtils.isEmpty(email)) {
 
-        String phone =
-                editPhone.getText()
-                        .toString()
-                        .trim();
+            emailLayout.setError(
+                    "נא להזין כתובת אימייל"
+            );
 
-        if (TextUtils.isEmpty(username)) {
-            showError("נא להזין שם משתמש");
+            emailEditText.requestFocus();
             return;
         }
 
-        if (username.length() < 3) {
-            showError("שם המשתמש חייב להכיל לפחות 3 תווים");
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+
+            emailLayout.setError(
+                    "כתובת האימייל אינה תקינה"
+            );
+
+            emailEditText.requestFocus();
             return;
         }
 
         if (TextUtils.isEmpty(password)) {
-            showError("נא להזין סיסמה");
+
+            passwordLayout.setError(
+                    "נא להזין סיסמה"
+            );
+
+            passwordEditText.requestFocus();
             return;
         }
 
-        if (password.length() < 6) {
-            showError("הסיסמה חייבת להכיל לפחות 6 תווים");
+        if (password.length() < 8) {
+
+            passwordLayout.setError(
+                    "הסיסמה חייבת להכיל לפחות 8 תווים"
+            );
+
+            passwordEditText.requestFocus();
             return;
         }
 
         if (TextUtils.isEmpty(confirmPassword)) {
-            showError("נא לאמת את הסיסמה");
+
+            confirmPasswordLayout.setError(
+                    "נא לאשר את הסיסמה"
+            );
+
+            confirmPasswordEditText.requestFocus();
             return;
         }
 
         if (!password.equals(confirmPassword)) {
-            showError("הסיסמאות אינן תואמות");
+
+            confirmPasswordLayout.setError(
+                    "הסיסמאות אינן תואמות"
+            );
+
+            confirmPasswordEditText.requestFocus();
             return;
         }
 
-        if (TextUtils.isEmpty(phone)) {
-            showError("נא להזין מספר טלפון");
-            return;
-        }
-
-        Bundle data = getArguments();
-
-        if (data == null) {
-            data = new Bundle();
-        }
-
-        data.putBoolean(
-                "accountStepCompleted",
-                true
-        );
-
-        data.putString(
-                "username",
-                username
-        );
-
-        data.putString(
-                "password",
+        createFirebaseAccount(
+                email,
                 password
         );
-
-        data.putString(
-                "phone",
-                phone
-        );
-
-        AddSynagogue03PhoneVerificationFragment nextFragment =
-                new AddSynagogue03PhoneVerificationFragment();
-
-        nextFragment.setArguments(data);
-
-        requireActivity()
-                .getSupportFragmentManager()
-                .beginTransaction()
-                .replace(
-                        R.id.fragment_container,
-                        nextFragment
-                )
-                .addToBackStack(null)
-                .commit();
     }
 
-    private void showError(String message) {
+    private void createFirebaseAccount(
+            String email,
+            String password) {
 
-        Toast.makeText(
-                requireContext(),
+        setLoading(true);
+
+        auth.createUserWithEmailAndPassword(
+                        email,
+                        password
+                )
+                .addOnCompleteListener(requireActivity(), task -> {
+
+                    if (!task.isSuccessful()) {
+
+                        setLoading(false);
+
+                        showFirebaseError(
+                                task.getException()
+                        );
+
+                        return;
+                    }
+
+                    FirebaseUser user =
+                            auth.getCurrentUser();
+
+                    if (user == null) {
+
+                        setLoading(false);
+
+                        showMessage(
+                                "אירעה שגיאה ביצירת החשבון. נסו שוב."
+                        );
+
+                        return;
+                    }
+
+                    sendVerificationEmail(user);
+                });
+    }
+
+    private void sendVerificationEmail(
+            FirebaseUser user) {
+
+        user.sendEmailVerification()
+                .addOnCompleteListener(task -> {
+
+                    setLoading(false);
+
+                    if (!task.isSuccessful()) {
+
+                        showMessage(
+                                "החשבון נוצר, אך לא הצלחנו לשלוח את אימייל האימות."
+                        );
+
+                        return;
+                    }
+
+                    Bundle bundle = new Bundle();
+
+                    bundle.putString(
+                            "ownerId",
+                            user.getUid()
+                    );
+
+                    bundle.putString(
+                            "email",
+                            user.getEmail()
+                    );
+
+                    AddSynagogueEmailVerificationFragment
+                            verificationFragment =
+                            new AddSynagogueEmailVerificationFragment();
+
+                    verificationFragment.setArguments(
+                            bundle
+                    );
+
+                    requireActivity()
+                            .getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(
+                                    R.id.fragment_container,
+                                    verificationFragment
+                            )
+                            .addToBackStack(null)
+                            .commit();
+                });
+    }
+
+    private void setLoading(boolean loading) {
+
+        continueButton.setEnabled(!loading);
+        backButton.setEnabled(!loading);
+
+        emailEditText.setEnabled(!loading);
+        passwordEditText.setEnabled(!loading);
+        confirmPasswordEditText.setEnabled(!loading);
+
+        if (loading) {
+
+            continueButton.setText(
+                    "יוצר חשבון..."
+            );
+
+        } else {
+
+            continueButton.setText(
+                    "המשך ←"
+            );
+        }
+    }
+
+    private void clearErrors() {
+
+        emailLayout.setError(null);
+        passwordLayout.setError(null);
+        confirmPasswordLayout.setError(null);
+    }
+
+    private String getText(
+            TextInputEditText editText) {
+
+        if (editText.getText() == null) {
+            return "";
+        }
+
+        return editText.getText()
+                .toString()
+                .trim();
+    }
+
+    private void showFirebaseError(
+            Exception exception) {
+
+        if (exception == null) {
+
+            showMessage(
+                    "לא הצלחנו ליצור את החשבון. נסו שוב."
+            );
+
+            return;
+        }
+
+        String error = exception.getMessage();
+
+        if (error != null &&
+                error.contains("already in use")) {
+
+            emailLayout.setError(
+                    "כתובת האימייל הזו כבר רשומה במערכת."
+            );
+
+            emailEditText.requestFocus();
+
+            return;
+        }
+
+        if (error != null &&
+                error.contains("badly formatted")) {
+
+            emailLayout.setError(
+                    "כתובת האימייל אינה תקינה."
+            );
+
+            emailEditText.requestFocus();
+
+            return;
+        }
+
+        if (error != null &&
+                error.contains("network")) {
+
+            showMessage(
+                    "אין חיבור לאינטרנט. בדקו את החיבור ונסו שוב."
+            );
+
+            return;
+        }
+
+        showMessage(
+                "לא הצלחנו ליצור את החשבון. נסו שוב."
+        );
+    }
+
+    private void showMessage(
+            String message) {
+
+        if (getView() == null) {
+            return;
+        }
+
+        Snackbar.make(
+                getView(),
                 message,
-                Toast.LENGTH_LONG
+                Snackbar.LENGTH_LONG
         ).show();
     }
-}
 
+
+
+
+    private void setupProgress(View view, int currentStep)
+    {
+
+        int[] stepIds = {
+                R.id.progressStep1,
+                R.id.progressStep2,
+                R.id.progressStep3,
+                R.id.progressStep4,
+                R.id.progressStep5,
+                R.id.progressStep6
+        };
+
+        int[] lineIds = {
+                R.id.progressLine1,
+                R.id.progressLine2,
+                R.id.progressLine3,
+                R.id.progressLine4,
+                R.id.progressLine5
+        };
+
+        for (int i = 0; i < stepIds.length; i++) {
+
+            TextView step =
+                    view.findViewById(stepIds[i]);
+
+            int stepNumber = i + 1;
+
+            if (stepNumber < currentStep) {
+
+                // שלב שהושלם
+                step.setText("✓");
+                step.setTextColor(
+                        Color.WHITE
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_completed
+                );
+
+            } else if (stepNumber == currentStep) {
+
+                // השלב הנוכחי
+                step.setText(
+                        String.valueOf(stepNumber)
+                );
+
+                step.setTextColor(
+                        Color.WHITE
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_active
+                );
+
+            } else {
+
+                // שלב שעדיין לא הגיע
+                step.setText(
+                        String.valueOf(stepNumber)
+                );
+
+                step.setTextColor(
+                        Color.rgb(
+                                111,
+                                123,
+                                135
+                        )
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_inactive
+                );
+            }
+        }
+
+        for (int i = 0; i < lineIds.length; i++) {
+
+            View line =
+                    view.findViewById(lineIds[i]);
+
+            if (i + 1 < currentStep) {
+
+                line.setBackgroundColor(
+                        Color.rgb(
+                                25,
+                                118,
+                                210
+                        )
+                );
+
+            } else {
+
+                line.setBackgroundColor(
+                        Color.rgb(
+                                213,
+                                220,
+                                229
+                        )
+                );
+            }
+        }
+
+        TextView stepText =
+                view.findViewById(
+                        R.id.progressStepText
+                );
+
+        stepText.setText(
+                "שלב "
+                        + currentStep
+                        + " מתוך 6"
+        );
+    }
+}

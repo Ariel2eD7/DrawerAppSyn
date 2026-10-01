@@ -1,5 +1,6 @@
 package com.example.synagogue;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -22,6 +23,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 
 public class AddSynagogue06SummaryFragment extends Fragment {
 
@@ -57,6 +59,8 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             @Nullable Bundle savedInstanceState) {
 
         super.onViewCreated(view, savedInstanceState);
+
+        setupProgress(view, 6);
 
         summaryText =
                 view.findViewById(R.id.summaryText);
@@ -494,6 +498,8 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         }
     }
 
+
+
     private void saveSynagogue() {
 
         Bundle data = getArguments();
@@ -519,18 +525,6 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                         ""
                 ).trim();
 
-        String username =
-                data.getString(
-                        "username",
-                        ""
-                ).trim();
-
-        String password =
-                data.getString(
-                        "password",
-                        ""
-                );
-
         if (TextUtils.isEmpty(name)) {
 
             showError(
@@ -549,19 +543,31 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             return;
         }
 
-        if (TextUtils.isEmpty(username)) {
+        /*
+         * המשתמש נוצר כבר בתחילת ההרשמה
+         * באמצעות Firebase Authentication.
+         */
+
+        FirebaseUser currentUser =
+                auth.getCurrentUser();
+
+        if (currentUser == null) {
 
             showError(
-                    "חסר שם משתמש"
+                    "לא נמצא חשבון מחובר. נא להתחבר מחדש."
             );
 
             return;
         }
 
-        if (TextUtils.isEmpty(password)) {
+        /*
+         * לא שומרים בית כנסת לפני אימות האימייל.
+         */
+
+        if (!currentUser.isEmailVerified()) {
 
             showError(
-                    "חסרה סיסמה"
+                    "יש לאמת את כתובת האימייל לפני שמירת בית הכנסת."
             );
 
             return;
@@ -570,68 +576,20 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         buttonSave.setEnabled(false);
         buttonBack.setEnabled(false);
 
-        FirebaseUser currentUser =
-                auth.getCurrentUser();
+        /*
+         * שומרים את בית הכנסת תחת UID של
+         * המשתמש שיצר אותו.
+         */
 
-        if (currentUser != null) {
-
-            saveToFirestore(
-                    currentUser.getUid(),
-                    data
-            );
-
-            return;
-        }
-
-        String email =
-                username.toLowerCase()
-                        + "@myapp.local";
-
-        auth.createUserWithEmailAndPassword(
-                email,
-                password
-        ).addOnCompleteListener(task -> {
-
-            if (!task.isSuccessful()) {
-
-                buttonSave.setEnabled(true);
-                buttonBack.setEnabled(true);
-
-                String message =
-                        task.getException() != null
-                                ? task.getException()
-                                .getMessage()
-                                : "שגיאה לא ידועה";
-
-                showError(
-                        "יצירת המשתמש נכשלה: "
-                                + message
-                );
-
-                return;
-            }
-
-            FirebaseUser user =
-                    auth.getCurrentUser();
-
-            if (user == null) {
-
-                buttonSave.setEnabled(true);
-                buttonBack.setEnabled(true);
-
-                showError(
-                        "המשתמש נוצר אך לא ניתן לקבל את פרטיו"
-                );
-
-                return;
-            }
-
-            saveToFirestore(
-                    user.getUid(),
-                    data
-            );
-        });
+        saveToFirestore(
+                currentUser.getUid(),
+                data
+        );
     }
+
+
+
+
 
     private void saveToFirestore(
             String uid,
@@ -639,6 +597,28 @@ public class AddSynagogue06SummaryFragment extends Fragment {
 
         Map<String, Object> synagogue =
                 new HashMap<>();
+
+        FirebaseUser currentUser =
+                auth.getCurrentUser();
+
+        String email = "";
+
+        if (currentUser != null &&
+                currentUser.getEmail() != null) {
+
+            email =
+                    currentUser.getEmail();
+        }
+
+        synagogue.put(
+                "ownerId",
+                uid
+        );
+
+        synagogue.put(
+                "ownerEmail",
+                email
+        );
 
         synagogue.put(
                 "name",
@@ -665,18 +645,12 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         );
 
         synagogue.put(
-                "username",
+                "description",
                 data.getString(
-                        "username",
+                        "synagogueDescription",
                         ""
                 )
         );
-
-        synagogue.put(
-                "description",
-                data.getString("synagogueDescription", "")
-        );
-
 
         synagogue.put(
                 "latitude",
@@ -694,27 +668,15 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                 )
         );
 
-        /*
-         * תפילות
-         */
-
         synagogue.put(
                 "prayers",
                 buildPrayerData(data)
         );
 
-        /*
-         * מאפיינים
-         */
-
         synagogue.put(
                 "features",
                 buildFeatures(data)
         );
-
-        /*
-         * מידע מערכת
-         */
 
         synagogue.put(
                 "status",
@@ -755,6 +717,7 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                     );
                 });
     }
+
 
     private Map<String, Object> buildPrayerData(
             Bundle data) {
@@ -880,5 +843,122 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                 Toast.LENGTH_LONG
         ).show();
     }
+
+
+
+    private void setupProgress(View view, int currentStep)
+    {
+
+        int[] stepIds = {
+                R.id.progressStep1,
+                R.id.progressStep2,
+                R.id.progressStep3,
+                R.id.progressStep4,
+                R.id.progressStep5,
+                R.id.progressStep6
+        };
+
+        int[] lineIds = {
+                R.id.progressLine1,
+                R.id.progressLine2,
+                R.id.progressLine3,
+                R.id.progressLine4,
+                R.id.progressLine5
+        };
+
+        for (int i = 0; i < stepIds.length; i++) {
+
+            TextView step =
+                    view.findViewById(stepIds[i]);
+
+            int stepNumber = i + 1;
+
+            if (stepNumber < currentStep) {
+
+                // שלב שהושלם
+                step.setText("✓");
+                step.setTextColor(
+                        Color.WHITE
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_completed
+                );
+
+            } else if (stepNumber == currentStep) {
+
+                // השלב הנוכחי
+                step.setText(
+                        String.valueOf(stepNumber)
+                );
+
+                step.setTextColor(
+                        Color.WHITE
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_active
+                );
+
+            } else {
+
+                // שלב שעדיין לא הגיע
+                step.setText(
+                        String.valueOf(stepNumber)
+                );
+
+                step.setTextColor(
+                        Color.rgb(
+                                111,
+                                123,
+                                135
+                        )
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_inactive
+                );
+            }
+        }
+
+        for (int i = 0; i < lineIds.length; i++) {
+
+            View line =
+                    view.findViewById(lineIds[i]);
+
+            if (i + 1 < currentStep) {
+
+                line.setBackgroundColor(
+                        Color.rgb(
+                                25,
+                                118,
+                                210
+                        )
+                );
+
+            } else {
+
+                line.setBackgroundColor(
+                        Color.rgb(
+                                213,
+                                220,
+                                229
+                        )
+                );
+            }
+        }
+
+        TextView stepText =
+                view.findViewById(
+                        R.id.progressStepText
+                );
+
+        stepText.setText(
+                "שלב "
+                        + currentStep
+                        + " מתוך 6"
+        );
+    }
+
 
 }

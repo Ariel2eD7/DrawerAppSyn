@@ -1,17 +1,20 @@
 package com.example.synagogue;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.drawerappsyn.R;
+
 
 public class AddSynagogue02BasicFragment extends Fragment {
 
@@ -44,6 +47,8 @@ public class AddSynagogue02BasicFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
+        setupProgress(view, 4);
+
         editTextName =
                 view.findViewById(R.id.editTextSynagogueName);
 
@@ -60,66 +65,10 @@ public class AddSynagogue02BasicFragment extends Fragment {
                                 .popBackStack()
                 );
 
-
-
-         view.findViewById(R.id.buttonNext).setOnClickListener(v -> {
-
-            String name =
-                    editTextName.getText().toString().trim();
-
-            String phone =
-                    editTextPhone.getText().toString().trim();
-
-            String description =
-                    editTextDescription.getText().toString().trim();
-
-            if (TextUtils.isEmpty(name)) {
-                editTextName.setError("יש להזין את שם בית הכנסת");
-                editTextName.requestFocus();
-                return;
-            }
-
-            if (TextUtils.isEmpty(phone)) {
-                editTextPhone.setError("יש להזין מספר טלפון");
-                editTextPhone.requestFocus();
-                return;
-            }
-
-            // יוצרים Bundle חדש עם נתוני ההרשמה
-            Bundle data = new Bundle();
-
-            data.putString(
-                    "synagogueName",
-                    name
-            );
-
-            data.putString(
-                    "synagoguePhone",
-                    phone
-            );
-
-            data.putString(
-                    "synagogueDescription",
-                    description
-            );
-
-            AddSynagogue03LocationFragment nextFragment =
-                    new AddSynagogue03LocationFragment();
-
-            nextFragment.setArguments(data);
-
-            requireActivity()
-                    .getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(
-                            R.id.fragment_container,
-                            nextFragment
-                    )
-                    .addToBackStack(null)
-                    .commit();
-        });
-
-
+        view.findViewById(R.id.buttonNext)
+                .setOnClickListener(v ->
+                        continueToNextStep()
+                );
     }
 
     private void continueToNextStep() {
@@ -146,6 +95,7 @@ public class AddSynagogue02BasicFragment extends Fragment {
             );
 
             editTextName.requestFocus();
+
             return;
         }
 
@@ -156,52 +106,54 @@ public class AddSynagogue02BasicFragment extends Fragment {
             );
 
             editTextPhone.requestFocus();
+
             return;
         }
 
         /*
-         * אם הגענו לכאן מהמסך הראשון,
-         * כבר יכול להיות Bundle קיים.
+         * חשוב:
          *
-         * אנחנו משתמשים ב-Bundle אחד וממשיכים
-         * להעביר אותו בין כל שלבי ההרשמה.
+         * שומרים את כל הנתונים שהגיעו
+         * מהשלבים הקודמים.
+         *
+         * כך ownerId / email / נתוני
+         * אימות האימייל לא הולכים לאיבוד.
          */
-        Bundle data = getArguments();
 
-        final Bundle registrationData;
+        Bundle oldData = getArguments();
 
-        if (data == null) {
-            registrationData = new Bundle();
+        Bundle data;
+
+        if (oldData != null) {
+            data = new Bundle(oldData);
         } else {
-            registrationData = new Bundle(data);
+            data = new Bundle();
         }
 
-        /*
-         * חשוב:
-         * אלה השמות שהמסכים הבאים והמסך 06
-         * מצפים לקבל.
-         */
-        registrationData.putString(
+        data.putString(
                 "synagogueName",
                 name
         );
 
-        registrationData.putString(
+        data.putString(
                 "synagoguePhone",
                 phone
         );
 
-        registrationData.putString(
+        data.putString(
                 "synagogueDescription",
                 description
+        );
+
+        data.putBoolean(
+                "basicDetailsCompleted",
+                true
         );
 
         AddSynagogue03LocationFragment nextFragment =
                 new AddSynagogue03LocationFragment();
 
-        nextFragment.setArguments(
-                registrationData
-        );
+        nextFragment.setArguments(data);
 
         requireActivity()
                 .getSupportFragmentManager()
@@ -213,4 +165,122 @@ public class AddSynagogue02BasicFragment extends Fragment {
                 .addToBackStack(null)
                 .commit();
     }
+
+
+
+    private void setupProgress(View view, int currentStep)
+    {
+
+        int[] stepIds = {
+                R.id.progressStep1,
+                R.id.progressStep2,
+                R.id.progressStep3,
+                R.id.progressStep4,
+                R.id.progressStep5,
+                R.id.progressStep6
+        };
+
+        int[] lineIds = {
+                R.id.progressLine1,
+                R.id.progressLine2,
+                R.id.progressLine3,
+                R.id.progressLine4,
+                R.id.progressLine5
+        };
+
+        for (int i = 0; i < stepIds.length; i++) {
+
+            TextView step =
+                    view.findViewById(stepIds[i]);
+
+            int stepNumber = i + 1;
+
+            if (stepNumber < currentStep) {
+
+                // שלב שהושלם
+                step.setText("✓");
+                step.setTextColor(
+                        Color.WHITE
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_completed
+                );
+
+            } else if (stepNumber == currentStep) {
+
+                // השלב הנוכחי
+                step.setText(
+                        String.valueOf(stepNumber)
+                );
+
+                step.setTextColor(
+                        Color.WHITE
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_active
+                );
+
+            } else {
+
+                // שלב שעדיין לא הגיע
+                step.setText(
+                        String.valueOf(stepNumber)
+                );
+
+                step.setTextColor(
+                        Color.rgb(
+                                111,
+                                123,
+                                135
+                        )
+                );
+
+                step.setBackgroundResource(
+                        R.drawable.bg_progress_inactive
+                );
+            }
+        }
+
+        for (int i = 0; i < lineIds.length; i++) {
+
+            View line =
+                    view.findViewById(lineIds[i]);
+
+            if (i + 1 < currentStep) {
+
+                line.setBackgroundColor(
+                        Color.rgb(
+                                25,
+                                118,
+                                210
+                        )
+                );
+
+            } else {
+
+                line.setBackgroundColor(
+                        Color.rgb(
+                                213,
+                                220,
+                                229
+                        )
+                );
+            }
+        }
+
+        TextView stepText =
+                view.findViewById(
+                        R.id.progressStepText
+                );
+
+        stepText.setText(
+                "שלב "
+                        + currentStep
+                        + " מתוך 6"
+        );
+    }
+
+
 }

@@ -7,6 +7,13 @@
     android:background="@android:color/white"
     android:padding="20dp">
 
+
+    <include
+        android:id="@+id/registrationProgressInclude"
+        layout="@layout/registration_progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
     <TextView
         android:id="@+id/title"
         android:layout_width="match_parent"
