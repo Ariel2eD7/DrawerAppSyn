@@ -68,7 +68,7 @@ public class AddSynagogue03LocationFragment extends Fragment
 
         super.onViewCreated(view, savedInstanceState);
 
-        setupProgress(view, 5);
+        setupProgress(view, 3);
 
         editTextCity =
                 view.findViewById(R.id.editTextCity);

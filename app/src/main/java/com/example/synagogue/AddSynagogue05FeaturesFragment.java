@@ -84,7 +84,7 @@ public class AddSynagogue05FeaturesFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
-        setupProgress(view, 7);
+        setupProgress(view, 5);
 
         featuresContainer =
                 view.findViewById(R.id.featuresContainer);

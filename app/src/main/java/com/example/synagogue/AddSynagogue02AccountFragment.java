@@ -57,7 +57,7 @@ public class AddSynagogue02AccountFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
-        setupProgress(view, 1);
+        setupProgress(view, 2);
 
         auth = FirebaseAuth.getInstance();
 

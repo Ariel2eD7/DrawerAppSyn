@@ -90,7 +90,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
 
         super.onViewCreated(view, savedInstanceState);
 
-        setupProgress(view, 6);
+        setupProgress(view, 4);
 
         prayerContainer = view.findViewById(R.id.prayerContainer);
         selectedDayTitle = view.findViewById(R.id.selectedDayTitle);
