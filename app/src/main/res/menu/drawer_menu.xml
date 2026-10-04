@@ -10,6 +10,10 @@
         android:id="@+id/nav_profile"
         android:title="פרופיל" />
 
+    <item android:id="@+id/nav_login"
+        android:title="התחברות" />
+
+
     <item
         android:id="@+id/nav_settings"
         android:title="הגדרות" />
