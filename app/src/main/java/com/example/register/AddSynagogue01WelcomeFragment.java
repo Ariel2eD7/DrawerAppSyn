@@ -15,7 +15,7 @@ import com.example.drawerappsyn.R;
 
 import android.graphics.Color;
 import android.widget.TextView;
-
+import com.example.drawerappsyn.MainActivity;
 
 
 public class AddSynagogue01WelcomeFragment extends Fragment {
@@ -23,6 +23,27 @@ public class AddSynagogue01WelcomeFragment extends Fragment {
     public AddSynagogue01WelcomeFragment() {
         // Required empty public constructor
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(true);
+    }
+
+
 
     @Nullable
     @Override

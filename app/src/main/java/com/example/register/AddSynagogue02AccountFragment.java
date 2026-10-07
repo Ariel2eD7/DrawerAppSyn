@@ -20,7 +20,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-
+import com.example.drawerappsyn.MainActivity;
 public class AddSynagogue02AccountFragment extends Fragment {
 
     private FirebaseAuth auth;
@@ -49,6 +49,26 @@ public class AddSynagogue02AccountFragment extends Fragment {
                 false
         );
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(true);
+    }
+
 
     @Override
     public void onViewCreated(

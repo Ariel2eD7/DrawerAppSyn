@@ -23,7 +23,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
+import com.example.drawerappsyn.MainActivity;
 
 public class AddSynagogue04PrayerFragment extends Fragment {
 
@@ -49,6 +49,26 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             "שישי",
             "שבת"
     };
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(true);
+    }
 
     private int selectedDay = 0;
 

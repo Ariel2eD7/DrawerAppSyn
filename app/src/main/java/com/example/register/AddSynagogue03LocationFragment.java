@@ -28,7 +28,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-
+import com.example.drawerappsyn.MainActivity;
 
 public class AddSynagogue03LocationFragment extends Fragment
         implements OnMapReadyCallback {
@@ -59,6 +59,26 @@ public class AddSynagogue03LocationFragment extends Fragment
                 container,
                 false
         );
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(true);
     }
 
     @Override

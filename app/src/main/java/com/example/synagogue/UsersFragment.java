@@ -21,7 +21,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.drawerappsyn.R;
-import com.example.register.AddSynagogue01WelcomeFragment;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -114,45 +113,10 @@ public class UsersFragment extends Fragment
 
         setupRecyclerView();
         setupSearch();
-        setupButtons(view);
         setupMap();
         loadSynagogues();
     }
 
-    private void setupButtons(View view) {
-
-        View buttonLogin =
-                view.findViewById(
-                        R.id.buttonLogin
-                );
-
-        View buttonAddSynagogue =
-                view.findViewById(
-                        R.id.buttonAddSynagogue
-                );
-
-        buttonLogin.setOnClickListener(v ->
-                getParentFragmentManager()
-                        .beginTransaction()
-                        .replace(
-                                R.id.fragment_container,
-                                new LoginFragment()
-                        )
-                        .addToBackStack(null)
-                        .commit()
-        );
-
-        buttonAddSynagogue.setOnClickListener(v ->
-                getParentFragmentManager()
-                        .beginTransaction()
-                        .replace(
-                                R.id.fragment_container,
-                                new AddSynagogue01WelcomeFragment()
-                        )
-                        .addToBackStack(null)
-                        .commit()
-        );
-    }
 
     private void setupRecyclerView() {
 

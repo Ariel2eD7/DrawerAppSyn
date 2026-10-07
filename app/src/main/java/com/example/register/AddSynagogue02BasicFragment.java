@@ -14,7 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.drawerappsyn.R;
-
+import com.example.drawerappsyn.MainActivity;
 
 public class AddSynagogue02BasicFragment extends Fragment {
 
@@ -38,6 +38,26 @@ public class AddSynagogue02BasicFragment extends Fragment {
                 container,
                 false
         );
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(true);
     }
 
     @Override

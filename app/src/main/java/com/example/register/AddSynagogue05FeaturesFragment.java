@@ -20,7 +20,7 @@ import com.google.android.material.card.MaterialCardView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
+import com.example.drawerappsyn.MainActivity;
 
 public class AddSynagogue05FeaturesFragment extends Fragment {
 
@@ -62,6 +62,27 @@ public class AddSynagogue05FeaturesFragment extends Fragment {
     public AddSynagogue05FeaturesFragment() {
         // Required empty public constructor
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(true);
+    }
+
 
     @Nullable
     @Override

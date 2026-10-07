@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.drawerappsyn.MainActivity;
+
 public class SynagogueDetailsFragment extends Fragment
         implements OnMapReadyCallback {
 
@@ -49,6 +51,7 @@ public class SynagogueDetailsFragment extends Fragment
     public SynagogueDetailsFragment() {
         // Required empty constructor
     }
+
 
     public static SynagogueDetailsFragment newInstance(
             Synagogue synagogue) {
@@ -81,6 +84,7 @@ public class SynagogueDetailsFragment extends Fragment
                 false
         );
     }
+
 
     @Override
     public void onViewCreated(
@@ -304,6 +308,29 @@ public class SynagogueDetailsFragment extends Fragment
 
         return null;
     }
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(false);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(true);
+    }
+
+
+
+
 
     // =============================================================
     // Helpers
