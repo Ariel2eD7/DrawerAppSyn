@@ -10,12 +10,16 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.navigation.NavigationView;
+
 import com.example.synagogue.UsersFragment;
 import com.example.synagogue.LoginFragment;
 import com.example.register.AddSynagogue01WelcomeFragment;
 
-import android.icu.util.HebrewCalendar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
+import android.icu.util.HebrewCalendar;
+import com.example.profile.ProfileFragment;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
@@ -24,11 +28,42 @@ public class MainActivity extends AppCompatActivity {
     NavigationView navigationView;
     Toolbar toolbar;
 
+    private FirebaseAuth auth;
+
+    // Listener שמאזין לשינוי במצב ההתחברות
+    private FirebaseAuth.AuthStateListener authStateListener;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+        // ==========================================
+        // Firebase
+        // ==========================================
+
+        auth = FirebaseAuth.getInstance();
+
+
+        // ==========================================
+        // חיבור בין Java לבין ה-XML
+        // ==========================================
+
+        drawerLayout =
+                findViewById(R.id.drawer_layout);
+
+        navigationView =
+                findViewById(R.id.navigation_view);
+
+        toolbar =
+                findViewById(R.id.toolbar);
+
+
+        // ==========================================
+        // מסך ראשי
+        // ==========================================
 
         if (savedInstanceState == null) {
 
@@ -41,46 +76,59 @@ public class MainActivity extends AppCompatActivity {
                     .commit();
         }
 
-        // ==========================================
-        // חיבור בין Java לבין ה-XML
-        // ==========================================
-
-        drawerLayout = findViewById(R.id.drawer_layout);
-        navigationView = findViewById(R.id.navigation_view);
-        toolbar = findViewById(R.id.toolbar);
 
         // ==========================================
-        // הגדרת ה-Toolbar
+        // הגדרת Toolbar
         // ==========================================
 
         setSupportActionBar(toolbar);
 
+
         // ==========================================
-        // יצירת כפתור התפריט ☰
+        // יצירת כפתור התפריט
         // ==========================================
 
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this,
-                drawerLayout,
-                toolbar,
-                R.string.open_drawer,
-                R.string.close_drawer
-        );
+        ActionBarDrawerToggle toggle =
+                new ActionBarDrawerToggle(
+                        this,
+                        drawerLayout,
+                        toolbar,
+                        R.string.open_drawer,
+                        R.string.close_drawer
+                );
 
         drawerLayout.addDrawerListener(toggle);
+
         toggle.syncState();
 
+
         // ==========================================
-        // הצגת התאריך העברי ב-Drawer Header
+        // תאריך עברי
         // ==========================================
 
         updateHebrewDate();
 
+
         // ==========================================
-        // חיבור כפתורי הרשמה / כניסה ב-Drawer
+        // כפתורי Header
         // ==========================================
 
         setupDrawerHeaderButtons();
+
+
+        // ==========================================
+        // Listener של Firebase
+        //
+        // בכל פעם שמשתמש מתחבר / מתנתק
+        // ה-Header מתעדכן אוטומטית
+        // ==========================================
+
+        authStateListener =
+                firebaseAuth -> {
+
+                    updateDrawerHeader();
+                };
+
 
         // ==========================================
         // לחיצה על פריטים בתפריט
@@ -89,6 +137,11 @@ public class MainActivity extends AppCompatActivity {
         navigationView.setNavigationItemSelectedListener(item -> {
 
             int id = item.getItemId();
+
+
+            // ======================================
+            // בית
+            // ======================================
 
             if (id == R.id.nav_home) {
 
@@ -99,71 +152,327 @@ public class MainActivity extends AppCompatActivity {
                                 new UsersFragment()
                         )
                         .commit();
+            }
 
-            } else if (id == R.id.nav_profile) {
 
-                // כאן יהיה מסך הפרופיל
+            // ======================================
+            // פרופיל
+            // ======================================
 
-            } else if (id == R.id.nav_settings) {
+            else if (id == R.id.nav_profile) {
+
+                // כאן יהיה בהמשך מסך הפרופיל
+            }
+
+
+            // ======================================
+            // הגדרות
+            // ======================================
+
+            else if (id == R.id.nav_settings) {
 
                 // כאן יהיו ההגדרות
             }
 
-            // סגירת התפריט
+
+            // סגירת Drawer
+
             drawerLayout.closeDrawers();
 
             return true;
         });
     }
 
-    public void setToolbarVisible(boolean visible) {
 
-        if (toolbar != null) {
-            toolbar.setVisibility(
-                    visible ? View.VISIBLE : View.GONE
+    // ==========================================
+    // התחלת האזנה ל-Firebase
+    // ==========================================
+
+    @Override
+    protected void onStart() {
+
+        super.onStart();
+
+        if (auth != null &&
+                authStateListener != null) {
+
+            auth.addAuthStateListener(
+                    authStateListener
             );
         }
     }
 
 
     // ==========================================
-    // כפתורי הרשמה / כניסה ב-Drawer Header
+    // הפסקת האזנה ל-Firebase
     // ==========================================
 
-    private void setupDrawerHeaderButtons() {
+    @Override
+    protected void onStop() {
+
+        super.onStop();
+
+        if (auth != null &&
+                authStateListener != null) {
+
+            auth.removeAuthStateListener(
+                    authStateListener
+            );
+        }
+    }
+
+
+    // ==========================================
+    // הצגה / הסתרה של Toolbar
+    // ==========================================
+
+    public void setToolbarVisible(boolean visible) {
+
+        if (toolbar != null) {
+
+            toolbar.setVisibility(
+                    visible
+                            ? View.VISIBLE
+                            : View.GONE
+            );
+        }
+    }
+
+
+    // ==========================================
+    // עדכון Drawer Header
+    // לפי מצב Firebase
+    // ==========================================
+
+    private void updateDrawerHeader() {
+
+        if (navigationView == null) {
+            return;
+        }
 
         if (navigationView.getHeaderCount() == 0) {
             return;
         }
 
-        // קבלת ה-Header
+
         View headerView =
                 navigationView.getHeaderView(0);
 
+
+        // ==========================================
+        // אזור אורח
+        // ==========================================
+
+        View guestSection =
+                headerView.findViewById(
+                        R.id.drawerGuestSection
+                );
+
+
+        // ==========================================
+        // אזור משתמש מחובר
+        // ==========================================
+
+        View loggedInSection =
+                headerView.findViewById(
+                        R.id.drawerLoggedInSection
+                );
+
+
+        // ==========================================
+        // טקסט שלום
+        // ==========================================
+
+        TextView welcomeText =
+                headerView.findViewById(
+                        R.id.drawerWelcomeText
+                );
+
+
+        // ==========================================
+        // אימייל
+        // ==========================================
+
+        TextView emailText =
+                headerView.findViewById(
+                        R.id.drawerLoggedInEmail
+                );
+
+
+        // ==========================================
+        // בדיקת משתמש Firebase
+        // ==========================================
+
+        FirebaseUser user =
+                auth.getCurrentUser();
+
+
+        // ==========================================
+        // משתמש מחובר
+        // ==========================================
+
+        if (user != null) {
+
+            // --------------------------------------
+            // הסתרת אזור אורח
+            // --------------------------------------
+
+            if (guestSection != null) {
+
+                guestSection.setVisibility(
+                        View.GONE
+                );
+            }
+
+
+            // --------------------------------------
+            // הצגת אזור משתמש מחובר
+            // --------------------------------------
+
+            if (loggedInSection != null) {
+
+                loggedInSection.setVisibility(
+                        View.VISIBLE
+                );
+            }
+
+
+            // --------------------------------------
+            // שם המשתמש
+            // --------------------------------------
+
+            if (welcomeText != null) {
+
+                String displayName =
+                        user.getDisplayName();
+
+                if (displayName != null &&
+                        !displayName.trim().isEmpty()) {
+
+                    welcomeText.setText(
+                            "שלום, " + displayName
+                    );
+
+                } else {
+
+                    welcomeText.setText(
+                            "שלום!"
+                    );
+                }
+            }
+
+
+            // --------------------------------------
+            // אימייל
+            // --------------------------------------
+
+            if (emailText != null) {
+
+                String email =
+                        user.getEmail();
+
+                if (email != null &&
+                        !email.trim().isEmpty()) {
+
+                    emailText.setText(
+                            email
+                    );
+
+                } else {
+
+                    emailText.setText(
+                            "מחובר"
+                    );
+                }
+            }
+        }
+
+
+        // ==========================================
+        // משתמש לא מחובר
+        // ==========================================
+
+        else {
+
+            // --------------------------------------
+            // הצגת אזור אורח
+            // --------------------------------------
+
+            if (guestSection != null) {
+
+                guestSection.setVisibility(
+                        View.VISIBLE
+                );
+            }
+
+
+            // --------------------------------------
+            // הסתרת אזור משתמש מחובר
+            // --------------------------------------
+
+            if (loggedInSection != null) {
+
+                loggedInSection.setVisibility(
+                        View.GONE
+                );
+            }
+
+
+            // --------------------------------------
+            // איפוס הטקסטים
+            // --------------------------------------
+
+            if (welcomeText != null) {
+
+                welcomeText.setText(
+                        "שלום!"
+                );
+            }
+
+            if (emailText != null) {
+
+                emailText.setText(
+                        "מחובר"
+                );
+            }
+        }
+    }
+
+
+    // ==========================================
+    // כפתורי Header
+    // ==========================================
+
+    private void setupDrawerHeaderButtons() {
+
+        if (navigationView == null) {
+            return;
+        }
+
+        if (navigationView.getHeaderCount() == 0) {
+            return;
+        }
+
+
+        View headerView =
+                navigationView.getHeaderView(0);
+
+
+        // ==========================================
         // כפתור הרשמה
+        // ==========================================
+
         View registerButton =
                 headerView.findViewById(
                         R.id.drawerRegisterButton
                 );
 
-        // כפתור כניסה
-        View loginButton =
-                headerView.findViewById(
-                        R.id.drawerLoginButton
-                );
-
-        // ==========================================
-        // הרשמת בית כנסת
-        // ==========================================
-
         if (registerButton != null) {
 
             registerButton.setOnClickListener(v -> {
 
-                // קודם סוגרים את ה-Drawer
                 drawerLayout.closeDrawers();
 
-                // מעבר למסך תחילת ההרשמה
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(
@@ -175,18 +484,22 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+
         // ==========================================
-        // כניסה לחשבון
+        // כפתור כניסה
         // ==========================================
+
+        View loginButton =
+                headerView.findViewById(
+                        R.id.drawerLoginButton
+                );
 
         if (loginButton != null) {
 
             loginButton.setOnClickListener(v -> {
 
-                // קודם סוגרים את ה-Drawer
                 drawerLayout.closeDrawers();
 
-                // מעבר למסך ההתחברות
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(
@@ -197,7 +510,85 @@ public class MainActivity extends AppCompatActivity {
                         .commit();
             });
         }
+
+
+        // ==========================================
+        // כפתור פרופיל
+        // ==========================================
+
+
+
+        View profileButton =
+                headerView.findViewById(
+                        R.id.drawerProfileButton
+                );
+
+        if (profileButton != null) {
+
+            profileButton.setOnClickListener(v -> {
+
+                // סגירת ה-Drawer
+                drawerLayout.closeDrawers();
+
+                // מעבר למסך הפרופיל
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(
+                                R.id.fragment_container,
+                                new com.example.profile.ProfileFragment()
+                        )
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
+
+
+
+        // ==========================================
+        // כפתור התנתקות
+        // ==========================================
+
+        View logoutButton =
+                headerView.findViewById(
+                        R.id.drawerLogoutButton
+                );
+
+        if (logoutButton != null) {
+
+            logoutButton.setOnClickListener(v -> {
+
+                // ==================================
+                // התנתקות
+                // ==================================
+
+                auth.signOut();
+
+                // ==================================
+                // אין צורך לקרוא כאן
+                // ל-updateDrawerHeader()
+                //
+                // ה-AuthStateListener יעשה זאת
+                // אוטומטית
+                // ==================================
+
+                drawerLayout.closeDrawers();
+
+
+                // ==================================
+                // חזרה למסך הראשי
+                // ==================================
+
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(
+                                R.id.fragment_container,
+                                new UsersFragment()
+                        )
+                        .commit();
+            });
+        }
     }
+
 
     // ==========================================
     // עדכון התאריך העברי
@@ -205,72 +596,78 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateHebrewDate() {
 
+        if (navigationView == null) {
+            return;
+        }
+
         if (navigationView.getHeaderCount() == 0) {
             return;
         }
 
-        // קבלת ה-Header של ה-Drawer
+
         View headerView =
                 navigationView.getHeaderView(0);
 
-        // מציאת TextView של התאריך
+
         TextView hebrewDateText =
                 headerView.findViewById(
                         R.id.hebrewDateText
                 );
 
+
         if (hebrewDateText == null) {
             return;
         }
 
-        // יצירת לוח עברי לפי התאריך הנוכחי
+
         HebrewCalendar hebrewCalendar =
                 new HebrewCalendar();
 
-        // היום בחודש העברי
+
         int day =
                 hebrewCalendar.get(
                         Calendar.DAY_OF_MONTH
                 );
 
-        // החודש העברי
+
         int month =
                 hebrewCalendar.get(
                         Calendar.MONTH
                 );
 
-        // השנה העברית
+
         int year =
                 hebrewCalendar.get(
                         Calendar.YEAR
                 );
 
-        // יום בשבוע
+
         Calendar gregorianCalendar =
                 Calendar.getInstance();
+
 
         int dayOfWeek =
                 gregorianCalendar.get(
                         Calendar.DAY_OF_WEEK
                 );
 
-        // שמות החודשים
+
         String monthName =
                 getHebrewMonthName(month);
 
-        // שמות ימי השבוע
+
         String dayName =
                 getHebrewDayName(dayOfWeek);
 
-        // המרת היום העברי לאותיות
+
         String hebrewDay =
                 numberToHebrew(day);
 
-        // המרת השנה העברית לאותיות
+
         String hebrewYear =
                 hebrewYearToHebrewLetters(year);
 
-        // בניית הטקסט הסופי
+
         String fullDate =
                 dayName
                         + ", "
@@ -280,8 +677,12 @@ public class MainActivity extends AppCompatActivity {
                         + " "
                         + hebrewYear;
 
-        hebrewDateText.setText(fullDate);
+
+        hebrewDateText.setText(
+                fullDate
+        );
     }
+
 
     // ==========================================
     // שמות חודשי השנה העברית
@@ -335,6 +736,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     // ==========================================
     // שמות ימי השבוע
     // ==========================================
@@ -369,6 +771,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     // ==========================================
     // המרת מספר לאותיות עבריות
     // ==========================================
@@ -379,31 +782,47 @@ public class MainActivity extends AppCompatActivity {
             return "";
         }
 
+
         StringBuilder result =
                 new StringBuilder();
 
+
         // מאות
+
         while (number >= 400) {
+
             result.append("ת");
+
             number -= 400;
         }
 
+
         if (number >= 300) {
+
             result.append("ש");
+
             number -= 300;
         }
 
+
         if (number >= 200) {
+
             result.append("ר");
+
             number -= 200;
         }
 
+
         if (number >= 100) {
+
             result.append("ק");
+
             number -= 100;
         }
 
+
         // עשרות
+
         String[] tens = {
                 "",
                 "י",
@@ -417,6 +836,7 @@ public class MainActivity extends AppCompatActivity {
                 "צ"
         };
 
+
         if (number >= 10) {
 
             result.append(
@@ -426,7 +846,9 @@ public class MainActivity extends AppCompatActivity {
             number %= 10;
         }
 
+
         // יחידות
+
         String[] ones = {
                 "",
                 "א",
@@ -440,6 +862,7 @@ public class MainActivity extends AppCompatActivity {
                 "ט"
         };
 
+
         if (number > 0) {
 
             result.append(
@@ -447,10 +870,13 @@ public class MainActivity extends AppCompatActivity {
             );
         }
 
+
         String hebrew =
                 result.toString();
 
+
         // גרש / גרשיים
+
         if (hebrew.length() == 1) {
 
             return hebrew + "׳";
@@ -468,11 +894,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     // ==========================================
     // המרת השנה העברית
-    //
-    // לדוגמה:
-    // 5787 -> ה׳תשפ״ז
     // ==========================================
 
     private String hebrewYearToHebrewLetters(
@@ -484,19 +908,19 @@ public class MainActivity extends AppCompatActivity {
         int remainder =
                 year % 1000;
 
+
         StringBuilder result =
                 new StringBuilder();
 
+
         // האלפים
+
         if (thousands > 0) {
 
             String thousandsText =
-                    numberToHebrew(
-                            thousands
-                    );
+                    numberToHebrew(thousands);
 
-            // מסירים את הגרש
-            // שהפונקציה numberToHebrew מוסיפה
+
             if (thousandsText.endsWith("׳")) {
 
                 thousandsText =
@@ -506,15 +930,18 @@ public class MainActivity extends AppCompatActivity {
                         );
             }
 
+
             result.append(
                     thousandsText
             );
 
-            // גרש אחד בלבד אחרי ה-ה'
+
             result.append("׳");
         }
 
+
         // שאר השנה
+
         if (remainder > 0) {
 
             result.append(
@@ -523,6 +950,7 @@ public class MainActivity extends AppCompatActivity {
                     )
             );
         }
+
 
         return result.toString();
     }

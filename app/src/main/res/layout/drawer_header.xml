@@ -7,7 +7,9 @@
     android:layout_height="250dp"
     android:background="@color/primary">
 
+    <!-- ================================== -->
     <!-- תוכן מרכזי של ה-Header -->
+    <!-- ================================== -->
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,17 +22,18 @@
         android:paddingTop="4dp">
 
         <!-- ================================== -->
-        <!-- אזור הרשמה / כניסה -->
+        <!-- מצב אורח -->
         <!-- ================================== -->
 
         <LinearLayout
+            android:id="@+id/drawerGuestSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
             android:layoutDirection="rtl">
 
-            <!-- צד ימין - הוספת בית כנסת -->
+            <!-- הרשמה -->
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -50,8 +53,7 @@
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:gravity="center"
-                    android:singleLine="true"
-                    android:ellipsize="none" />
+                    android:singleLine="true" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/drawerRegisterButton"
@@ -76,7 +78,7 @@
                 android:layout_height="65dp"
                 android:background="#40FFFFFF" />
 
-            <!-- צד שמאל - התחברות -->
+            <!-- כניסה -->
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -95,8 +97,7 @@
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:gravity="center"
-                    android:singleLine="true"
-                    android:ellipsize="none" />
+                    android:singleLine="true" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/drawerLoginButton"
@@ -117,6 +118,109 @@
             </LinearLayout>
 
         </LinearLayout>
+
+
+        <!-- ================================== -->
+        <!-- מצב משתמש מחובר -->
+        <!-- ================================== -->
+
+        <LinearLayout
+            android:id="@+id/drawerLoggedInSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layoutDirection="rtl"
+            android:visibility="gone">
+
+            <!-- פרופיל -->
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <TextView
+                    android:id="@+id/drawerWelcomeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="שלום!"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:gravity="center"
+                    android:singleLine="true" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/drawerProfileButton"
+                    android:layout_width="110dp"
+                    android:layout_height="38dp"
+                    android:layout_marginTop="5dp"
+                    android:text="הפרופיל שלי"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    app:cornerRadius="19dp"
+                    app:backgroundTint="@android:color/white" />
+
+            </LinearLayout>
+
+            <!-- קו הפרדה -->
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="65dp"
+                android:background="#40FFFFFF" />
+
+            <!-- התנתקות -->
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp">
+
+                <TextView
+                    android:id="@+id/drawerLoggedInEmail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="מחובר"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:gravity="center"
+                    android:singleLine="true"
+                    android:maxLines="1" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/drawerLogoutButton"
+                    android:layout_width="100dp"
+                    android:layout_height="38dp"
+                    android:layout_marginTop="5dp"
+                    android:text="התנתקות"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    app:cornerRadius="19dp"
+                    app:backgroundTint="@color/primary"
+                    app:strokeColor="@android:color/white"
+                    app:strokeWidth="1dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
 
         <!-- ================================== -->
         <!-- אזור המיתוג -->
@@ -151,7 +255,10 @@
 
     </LinearLayout>
 
-    <!-- תאריך עברי - פינה שמאלית תחתונה -->
+
+    <!-- ================================== -->
+    <!-- תאריך עברי -->
+    <!-- ================================== -->
 
     <TextView
         android:id="@+id/hebrewDateText"
@@ -164,6 +271,5 @@
         android:textStyle="bold"
         android:textColor="#E8E8E8"
         android:text="טוען תאריך..." />
-
 
 </FrameLayout>
