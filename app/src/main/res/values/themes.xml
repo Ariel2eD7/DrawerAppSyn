@@ -1,9 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.DrawerAppSyn" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+
+    <style
+        name="Base.Theme.DrawerAppSyn"
+        parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- צבע ראשי של האפליקציה -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- צבעי Container -->
+        <item name="colorPrimaryContainer">@color/primary_light</item>
+        <item name="colorOnPrimaryContainer">@color/primary_dark</item>
+
+        <!-- צבע משני -->
+        <item name="colorSecondary">@color/primary</item>
+        <item name="colorOnSecondary">@color/white</item>
+
+        <!-- רקע -->
+        <item name="android:colorBackground">@color/screen_background</item>
     </style>
 
-    <style name="Theme.DrawerAppSyn" parent="Base.Theme.DrawerAppSyn" />
+    <style
+        name="Theme.DrawerAppSyn"
+        parent="Base.Theme.DrawerAppSyn" />
+
 </resources>

@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-
+    <!-- Drawer Header / צבע ראשי -->
     <color name="primary">#1565C0</color>
+
+    <!-- גוונים -->
+    <color name="primary_dark">#0D47A1</color>
+    <color name="primary_light">#E3F2FD</color>
+
+    <!-- רקע -->
+    <color name="screen_background">#F6F7F9</color>
+
 </resources>
