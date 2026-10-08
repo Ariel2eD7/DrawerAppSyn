@@ -1,8 +1,7 @@
 package com.example.synagogue;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Synagogue implements Serializable {
@@ -22,7 +21,8 @@ public class Synagogue implements Serializable {
     private double latitude;
     private double longitude;
 
-    private Map<String, Map<String, ArrayList<String>>> prayers;
+    private Map<String, Map<String, List<String>>> prayers;
+
     private Map<String, Boolean> features;
 
     private String status;
@@ -103,12 +103,12 @@ public class Synagogue implements Serializable {
         this.longitude = longitude;
     }
 
-    public Map<String, Map<String, ArrayList<String>>> getPrayers() {
+    public Map<String, Map<String, List<String>>> getPrayers() {
         return prayers;
     }
 
     public void setPrayers(
-            Map<String, Map<String, ArrayList<String>>> prayers) {
+            Map<String, Map<String, List<String>>> prayers) {
         this.prayers = prayers;
     }
 
@@ -135,10 +135,9 @@ public class Synagogue implements Serializable {
             return false;
         }
 
-        Boolean value =
-                features.get(key);
-
-        return value != null && value;
+        return Boolean.TRUE.equals(
+                features.get(key)
+        );
     }
 
     public int getFeatureCount() {
@@ -167,14 +166,14 @@ public class Synagogue implements Serializable {
 
         int count = 0;
 
-        for (Map<String, ArrayList<String>> day :
+        for (Map<String, List<String>> day :
                 prayers.values()) {
 
             if (day == null) {
                 continue;
             }
 
-            for (ArrayList<String> times :
+            for (List<String> times :
                     day.values()) {
 
                 if (times != null) {

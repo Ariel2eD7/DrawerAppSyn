@@ -2,6 +2,8 @@ package com.example.synagogue;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -17,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.drawerappsyn.MainActivity;
 import com.example.drawerappsyn.R;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -26,13 +29,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentSnapshot;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.example.drawerappsyn.MainActivity;
 
 public class SynagogueDetailsFragment extends Fragment
         implements OnMapReadyCallback {
@@ -40,7 +42,6 @@ public class SynagogueDetailsFragment extends Fragment
     private static final String ARG_SYNAGOGUE = "synagogue";
 
     private GoogleMap googleMap;
-
     private String phone = "";
     private double latitude = 0;
     private double longitude = 0;
@@ -48,10 +49,11 @@ public class SynagogueDetailsFragment extends Fragment
     private LinearLayout prayersContainer;
     private LinearLayout featuresContainer;
 
+    private FirebaseFirestore db;
+
     public SynagogueDetailsFragment() {
         // Required empty constructor
     }
-
 
     public static SynagogueDetailsFragment newInstance(
             Synagogue synagogue) {
@@ -85,7 +87,6 @@ public class SynagogueDetailsFragment extends Fragment
         );
     }
 
-
     @Override
     public void onViewCreated(
             @NonNull View view,
@@ -95,6 +96,9 @@ public class SynagogueDetailsFragment extends Fragment
                 view,
                 savedInstanceState
         );
+
+        db =
+                FirebaseFirestore.getInstance();
 
         TextView textName =
                 view.findViewById(R.id.textDetailName);
@@ -123,11 +127,14 @@ public class SynagogueDetailsFragment extends Fragment
         featuresContainer =
                 view.findViewById(R.id.featuresContainer);
 
+        db = FirebaseFirestore.getInstance();
+
         buttonBack.setOnClickListener(
                 v -> goBack()
         );
 
-        Synagogue synagogue = getSynagogue();
+        Synagogue synagogue =
+                getSynagogue();
 
         if (synagogue == null) {
 
@@ -140,9 +147,9 @@ public class SynagogueDetailsFragment extends Fragment
             return;
         }
 
-        // ---------------------------------------------------------
+        // =========================================================
         // Basic information
-        // ---------------------------------------------------------
+        // =========================================================
 
         textName.setText(
                 valueOrDefault(
@@ -158,9 +165,9 @@ public class SynagogueDetailsFragment extends Fragment
                 )
         );
 
-        // ---------------------------------------------------------
+        // =========================================================
         // Description
-        // ---------------------------------------------------------
+        // =========================================================
 
         String description =
                 synagogue.getDescription();
@@ -182,9 +189,9 @@ public class SynagogueDetailsFragment extends Fragment
             );
         }
 
-        // ---------------------------------------------------------
+        // =========================================================
         // Phone
-        // ---------------------------------------------------------
+        // =========================================================
 
         phone =
                 valueOrDefault(
@@ -213,9 +220,9 @@ public class SynagogueDetailsFragment extends Fragment
             );
         }
 
-        // ---------------------------------------------------------
+        // =========================================================
         // Location
-        // ---------------------------------------------------------
+        // =========================================================
 
         latitude =
                 synagogue.getLatitude();
@@ -238,25 +245,31 @@ public class SynagogueDetailsFragment extends Fragment
             );
         }
 
-        // ---------------------------------------------------------
-        // Prayers
-        // ---------------------------------------------------------
+        // =========================================================
+        // Opening Hours
+        //
+        // IMPORTANT:
+        // Do NOT use synagogue.getPrayers().
+        //
+        // The new source is:
+        // synagogues_v2/{uid}/openingHours
+        // =========================================================
 
-        buildPrayers(
-                synagogue.getPrayers()
+        loadOpeningHours(
+                synagogue
         );
 
-        // ---------------------------------------------------------
+        // =========================================================
         // Features
-        // ---------------------------------------------------------
+        // =========================================================
 
         buildFeatures(
                 synagogue.getFeatures()
         );
 
-        // ---------------------------------------------------------
+        // =========================================================
         // Map
-        // ---------------------------------------------------------
+        // =========================================================
 
         SupportMapFragment map =
                 (SupportMapFragment)
@@ -268,6 +281,566 @@ public class SynagogueDetailsFragment extends Fragment
         if (map != null) {
             map.getMapAsync(this);
         }
+    }
+
+    // =============================================================
+    // Load Opening Hours from Firestore
+    // =============================================================
+
+
+
+    private void loadOpeningHours(
+            Synagogue synagogue) {
+
+        prayersContainer.removeAllViews();
+
+        if (synagogue == null) {
+            addEmptyState(
+                    prayersContainer,
+                    "שעות הפתיחה לא הוגדרו"
+            );
+            return;
+        }
+
+        // Document ID של המסמך ב־synagogues_v2
+        String synagogueId =
+                synagogue.getId();
+
+        if (TextUtils.isEmpty(synagogueId)) {
+
+            addEmptyState(
+                    prayersContainer,
+                    "לא נמצא מזהה בית הכנסת"
+            );
+
+            return;
+        }
+
+        db.collection("synagogues_v2")
+                .document(synagogueId)
+                .get()
+                .addOnSuccessListener(
+                        document -> {
+
+                            if (!document.exists()) {
+
+                                addEmptyState(
+                                        prayersContainer,
+                                        "שעות הפתיחה לא הוגדרו"
+                                );
+
+                                return;
+                            }
+
+                            Object openingHours =
+                                    document.get(
+                                            "openingHours"
+                                    );
+
+                            renderOpeningHours(
+                                    openingHours
+                            );
+                        }
+                )
+                .addOnFailureListener(
+                        error -> {
+
+                            addEmptyState(
+                                    prayersContainer,
+                                    "לא ניתן לטעון את שעות הפתיחה"
+                            );
+                        }
+                );
+    }
+
+
+    // =============================================================
+    // Render Opening Hours
+    // =============================================================
+
+    private void renderOpeningHours(
+            Object data) {
+
+        prayersContainer.removeAllViews();
+
+        if (!(data instanceof List)) {
+
+            addEmptyState(
+                    prayersContainer,
+                    "שעות הפתיחה לא הוגדרו"
+            );
+
+            return;
+        }
+
+        List<?> list =
+                (List<?>) data;
+
+        boolean found = false;
+
+        for (Object item : list) {
+
+            if (!(item instanceof Map)) {
+                continue;
+            }
+
+            Map<?, ?> map =
+                    (Map<?, ?>) item;
+
+            String type =
+                    stringValue(
+                            map.get("type")
+                    );
+
+            // =====================================================
+            // Header
+            // =====================================================
+
+            if ("header".equals(type)) {
+
+                String text =
+                        stringValue(
+                                map.get("text")
+                        );
+
+                if (TextUtils.isEmpty(text)) {
+
+                    text =
+                            stringValue(
+                                    map.get("content")
+                            );
+                }
+
+                if (!TextUtils.isEmpty(text)) {
+
+                    addHeaderView(
+                            prayersContainer,
+                            text
+                    );
+
+                    found = true;
+                }
+
+                continue;
+            }
+
+            // =====================================================
+            // Normal opening hour
+            // =====================================================
+
+            String title =
+                    stringValue(
+                            map.get("title")
+                    );
+
+            String content =
+                    stringValue(
+                            map.get("content")
+                    );
+
+            if (TextUtils.isEmpty(title)
+                    && TextUtils.isEmpty(content)) {
+
+                continue;
+            }
+
+            addOpeningHourView(
+                    prayersContainer,
+                    title,
+                    content
+            );
+
+            found = true;
+        }
+
+        if (!found) {
+
+            addEmptyState(
+                    prayersContainer,
+                    "שעות הפתיחה לא הוגדרו"
+            );
+        }
+    }
+
+    // =============================================================
+    // Opening Hour Row
+    // =============================================================
+
+    private void addOpeningHourView(
+            LinearLayout container,
+            String titleText,
+            String contentText) {
+
+        LinearLayout row =
+                createOpeningRow();
+
+        TextView title =
+                new TextView(
+                        requireContext()
+                );
+
+        title.setText(
+                titleText == null
+                        ? ""
+                        : titleText
+        );
+
+        title.setTextSize(16);
+        title.setTextColor(
+                Color.rgb(
+                        45,
+                        45,
+                        45
+                )
+        );
+
+        title.setTypeface(
+                null,
+                Typeface.BOLD
+        );
+
+        title.setGravity(
+                Gravity.CENTER_VERTICAL |
+                        Gravity.START
+        );
+
+        LinearLayout.LayoutParams titleParams =
+                new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1
+                );
+
+        titleParams.setMargins(
+                0,
+                0,
+                dp(8),
+                0
+        );
+
+        title.setLayoutParams(
+                titleParams
+        );
+
+        TextView content =
+                new TextView(
+                        requireContext()
+                );
+
+        content.setText(
+                contentText == null
+                        ? ""
+                        : contentText
+        );
+
+        content.setTextSize(16);
+
+        content.setTextColor(
+                Color.rgb(
+                        80,
+                        80,
+                        80
+                )
+        );
+
+        content.setGravity(
+                Gravity.CENTER_VERTICAL |
+                        Gravity.END
+        );
+
+        LinearLayout.LayoutParams contentParams =
+                new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1
+                );
+
+        contentParams.setMargins(
+                dp(8),
+                0,
+                0,
+                0
+        );
+
+        content.setLayoutParams(
+                contentParams
+        );
+
+        /*
+         * RTL:
+         *
+         * title | content
+         *
+         * Android will place them according to the row direction.
+         */
+
+        row.addView(title);
+        row.addView(content);
+
+        container.addView(row);
+    }
+
+    // =============================================================
+    // Opening Header
+    // =============================================================
+
+    private void addHeaderView(
+            LinearLayout container,
+            String textValue) {
+
+        if (TextUtils.isEmpty(textValue)) {
+            return;
+        }
+
+        View spacer =
+                new View(
+                        requireContext()
+                );
+
+        spacer.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        dp(10)
+                )
+        );
+
+        container.addView(spacer);
+
+        LinearLayout row =
+                createHeaderRow();
+
+        View line =
+                new View(
+                        requireContext()
+                );
+
+        line.setBackgroundColor(
+                Color.rgb(
+                        25,
+                        118,
+                        210
+                )
+        );
+
+        LinearLayout.LayoutParams lineParams =
+                new LinearLayout.LayoutParams(
+                        dp(5),
+                        dp(36)
+                );
+
+        lineParams.setMargins(
+                0,
+                0,
+                dp(12),
+                0
+        );
+
+        row.addView(
+                line,
+                lineParams
+        );
+
+        TextView title =
+                new TextView(
+                        requireContext()
+                );
+
+        title.setText(
+                textValue.trim()
+        );
+
+        title.setTextSize(18);
+
+        title.setTextColor(
+                Color.rgb(
+                        25,
+                        75,
+                        120
+                )
+        );
+
+        title.setTypeface(
+                null,
+                Typeface.BOLD
+        );
+
+        title.setGravity(
+                Gravity.CENTER
+        );
+
+        title.setTextAlignment(
+                View.TEXT_ALIGNMENT_CENTER
+        );
+
+        LinearLayout.LayoutParams titleParams =
+                new LinearLayout.LayoutParams(
+                        0,
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        1
+                );
+
+        titleParams.setMargins(
+                0,
+                0,
+                dp(12),
+                0
+        );
+
+        title.setLayoutParams(
+                titleParams
+        );
+
+        row.addView(title);
+
+        container.addView(row);
+    }
+
+    // =============================================================
+    // Opening Row Background
+    // =============================================================
+
+    private LinearLayout createOpeningRow() {
+
+        LinearLayout row =
+                new LinearLayout(
+                        requireContext()
+                );
+
+        row.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
+
+        row.setGravity(
+                Gravity.CENTER_VERTICAL
+        );
+
+        row.setPadding(
+                dp(16),
+                dp(14),
+                dp(16),
+                dp(14)
+        );
+
+        row.setLayoutDirection(
+                View.LAYOUT_DIRECTION_RTL
+        );
+
+        GradientDrawable background =
+                new GradientDrawable();
+
+        background.setColor(
+                Color.WHITE
+        );
+
+        background.setCornerRadius(
+                dp(18)
+        );
+
+        background.setStroke(
+                dp(1),
+                Color.rgb(
+                        232,
+                        234,
+                        237
+                )
+        );
+
+        row.setBackground(
+                background
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        params.setMargins(
+                0,
+                0,
+                0,
+                dp(8)
+        );
+
+        row.setLayoutParams(params);
+
+        return row;
+    }
+
+    // =============================================================
+    // Header Background
+    // =============================================================
+
+    private LinearLayout createHeaderRow() {
+
+        LinearLayout row =
+                new LinearLayout(
+                        requireContext()
+                );
+
+        row.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
+
+        row.setGravity(
+                Gravity.CENTER_VERTICAL
+        );
+
+        row.setPadding(
+                dp(16),
+                dp(14),
+                dp(16),
+                dp(14)
+        );
+
+        row.setLayoutDirection(
+                View.LAYOUT_DIRECTION_RTL
+        );
+
+        GradientDrawable background =
+                new GradientDrawable();
+
+        background.setColor(
+                Color.rgb(
+                        227,
+                        242,
+                        253
+                )
+        );
+
+        background.setCornerRadius(
+                dp(16)
+        );
+
+        background.setStroke(
+                dp(1),
+                Color.rgb(
+                        187,
+                        222,
+                        251
+                )
+        );
+
+        row.setBackground(
+                background
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        params.setMargins(
+                0,
+                0,
+                0,
+                dp(8)
+        );
+
+        row.setLayoutParams(params);
+
+        return row;
     }
 
     // =============================================================
@@ -291,7 +864,8 @@ public class SynagogueDetailsFragment extends Fragment
 
     private Synagogue getSynagogue() {
 
-        Bundle args = getArguments();
+        Bundle args =
+                getArguments();
 
         if (args == null) {
             return null;
@@ -303,13 +877,20 @@ public class SynagogueDetailsFragment extends Fragment
                 );
 
         if (object instanceof Synagogue) {
+
             return (Synagogue) object;
         }
 
         return null;
     }
+
+    // =============================================================
+    // Toolbar
+    // =============================================================
+
     @Override
     public void onResume() {
+
         super.onResume();
 
         MainActivity activity =
@@ -320,6 +901,7 @@ public class SynagogueDetailsFragment extends Fragment
 
     @Override
     public void onPause() {
+
         super.onPause();
 
         MainActivity activity =
@@ -327,10 +909,6 @@ public class SynagogueDetailsFragment extends Fragment
 
         activity.setToolbarVisible(true);
     }
-
-
-
-
 
     // =============================================================
     // Helpers
@@ -345,6 +923,26 @@ public class SynagogueDetailsFragment extends Fragment
         }
 
         return value.trim();
+    }
+
+    private String stringValue(
+            Object value) {
+
+        return value == null
+                ? ""
+                : String.valueOf(value).trim();
+    }
+
+    private int dp(int value) {
+
+        float density =
+                getResources()
+                        .getDisplayMetrics()
+                        .density;
+
+        return Math.round(
+                value * density
+        );
     }
 
     private boolean hasLocation() {
@@ -387,7 +985,7 @@ public class SynagogueDetailsFragment extends Fragment
     }
 
     // =============================================================
-    // Navigation / Waze / Google Maps
+    // Navigation
     // =============================================================
 
     private void openNavigation() {
@@ -401,7 +999,6 @@ public class SynagogueDetailsFragment extends Fragment
                         "," +
                         longitude;
 
-        // Try Waze first
         String wazeUrl =
                 "https://waze.com/ul?ll=" +
                         coordinates +
@@ -424,7 +1021,6 @@ public class SynagogueDetailsFragment extends Fragment
             // Waze is not installed.
         }
 
-        // Fallback to Google Maps
         String mapsUrl =
                 "https://www.google.com/maps/dir/?api=1" +
                         "&destination=" +
@@ -451,283 +1047,6 @@ public class SynagogueDetailsFragment extends Fragment
     }
 
     // =============================================================
-    // Prayers
-    // =============================================================
-
-    private void buildPrayers(
-            Map<String, Map<String, ArrayList<String>>> prayers) {
-
-        prayersContainer.removeAllViews();
-
-        if (prayers == null ||
-                prayers.isEmpty()) {
-
-            addEmptyState(
-                    prayersContainer,
-                    "לא הוגדרו זמני תפילות"
-            );
-
-            return;
-        }
-
-        String[] dayKeys = {
-                "sunday",
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "shabbat"
-        };
-
-        String[] dayNames = {
-                "ראשון",
-                "שני",
-                "שלישי",
-                "רביעי",
-                "חמישי",
-                "שישי",
-                "שבת"
-        };
-
-        String[] prayerKeys = {
-                "shacharit",
-                "mincha",
-                "maariv",
-                "kabbalatShabbat",
-                "musaf",
-                "havdalah"
-        };
-
-        String[] prayerNames = {
-                "שחרית",
-                "מנחה",
-                "ערבית",
-                "קבלת שבת",
-                "מוסף",
-                "הבדלה"
-        };
-
-        boolean found = false;
-
-        for (int i = 0;
-             i < dayKeys.length;
-             i++) {
-
-            Map<String, ArrayList<String>> dayPrayers =
-                    prayers.get(dayKeys[i]);
-
-            if (dayPrayers == null ||
-                    dayPrayers.isEmpty()) {
-                continue;
-            }
-
-            ArrayList<String> dayTimes =
-                    new ArrayList<>();
-
-            for (int j = 0;
-                 j < prayerKeys.length;
-                 j++) {
-
-                ArrayList<String> times =
-                        dayPrayers.get(
-                                prayerKeys[j]
-                        );
-
-                if (times == null ||
-                        times.isEmpty()) {
-                    continue;
-                }
-
-                ArrayList<String> validTimes =
-                        new ArrayList<>();
-
-                for (String time : times) {
-
-                    if (time == null) {
-                        continue;
-                    }
-
-                    String cleanTime =
-                            time.trim();
-
-                    if (!cleanTime.isEmpty()) {
-                        validTimes.add(cleanTime);
-                    }
-                }
-
-                if (validTimes.isEmpty()) {
-                    continue;
-                }
-
-                found = true;
-
-                StringBuilder timeLine =
-                        new StringBuilder();
-
-                timeLine.append(
-                        prayerNames[j]
-                );
-
-                timeLine.append(": ");
-
-                for (int k = 0;
-                     k < validTimes.size();
-                     k++) {
-
-                    if (k > 0) {
-                        timeLine.append(", ");
-                    }
-
-                    timeLine.append(
-                            validTimes.get(k)
-                    );
-                }
-
-                dayTimes.add(
-                        timeLine.toString()
-                );
-            }
-
-            if (!dayTimes.isEmpty()) {
-
-                addDayPrayerCard(
-                        dayNames[i],
-                        dayTimes
-                );
-            }
-        }
-
-        if (!found) {
-
-            addEmptyState(
-                    prayersContainer,
-                    "לא הוגדרו זמני תפילות"
-            );
-        }
-    }
-
-    private void addDayPrayerCard(
-            String dayName,
-            ArrayList<String> times) {
-
-        MaterialCardView card =
-                new MaterialCardView(
-                        requireContext()
-                );
-
-        card.setRadius(20);
-        card.setCardElevation(0);
-        card.setStrokeWidth(1);
-
-        card.setStrokeColor(
-                Color.rgb(
-                        228,
-                        234,
-                        241
-                )
-        );
-
-        LinearLayout content =
-                new LinearLayout(
-                        requireContext()
-                );
-
-        content.setOrientation(
-                LinearLayout.VERTICAL
-        );
-
-        content.setPadding(
-                18,
-                16,
-                18,
-                16
-        );
-
-        TextView day =
-                new TextView(
-                        requireContext()
-                );
-
-        day.setText(
-                "יום " + dayName
-        );
-
-        day.setTextSize(18);
-        day.setTextColor(
-                Color.rgb(
-                        24,
-                        34,
-                        48
-                )
-        );
-
-        day.setTypeface(
-                null,
-                android.graphics.Typeface.BOLD
-        );
-
-        day.setGravity(
-                Gravity.START
-        );
-
-        content.addView(day);
-
-        for (String time : times) {
-
-            TextView prayer =
-                    new TextView(
-                            requireContext()
-                    );
-
-            prayer.setText(
-                    "🕐  " + time
-            );
-
-            prayer.setTextSize(15);
-            prayer.setTextColor(
-                    Color.rgb(
-                            75,
-                            88,
-                            102
-                    )
-            );
-
-            prayer.setGravity(
-                    Gravity.START
-            );
-
-            prayer.setPadding(
-                    0,
-                    9,
-                    0,
-                    0
-            );
-
-            content.addView(prayer);
-        }
-
-        card.addView(content);
-
-        LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
-                );
-
-        params.setMargins(
-                0,
-                0,
-                0,
-                12
-        );
-
-        card.setLayoutParams(params);
-
-        prayersContainer.addView(card);
-    }
-
-    // =============================================================
     // Features
     // =============================================================
 
@@ -748,7 +1067,7 @@ public class SynagogueDetailsFragment extends Fragment
         }
 
         Map<String, String> names =
-                new HashMap<>();
+                new java.util.HashMap<>();
 
         names.put(
                 "womenSection",
@@ -817,6 +1136,7 @@ public class SynagogueDetailsFragment extends Fragment
 
             if (!Boolean.TRUE.equals(
                     entry.getValue())) {
+
                 continue;
             }
 
@@ -871,10 +1191,10 @@ public class SynagogueDetailsFragment extends Fragment
         );
 
         chip.setPadding(
-                14,
-                10,
-                14,
-                10
+                dp(14),
+                dp(10),
+                dp(14),
+                dp(10)
         );
 
         chip.setBackgroundResource(
@@ -891,7 +1211,7 @@ public class SynagogueDetailsFragment extends Fragment
                 0,
                 0,
                 0,
-                8
+                dp(8)
         );
 
         chip.setLayoutParams(params);
@@ -900,7 +1220,7 @@ public class SynagogueDetailsFragment extends Fragment
     }
 
     // =============================================================
-    // Empty state
+    // Empty State
     // =============================================================
 
     private void addEmptyState(
@@ -928,10 +1248,10 @@ public class SynagogueDetailsFragment extends Fragment
         );
 
         empty.setPadding(
-                16,
-                20,
-                16,
-                20
+                dp(16),
+                dp(20),
+                dp(16),
+                dp(20)
         );
 
         container.addView(empty);

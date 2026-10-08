@@ -3,279 +3,707 @@
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+
     android:background="#F5F7FA"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:layoutDirection="rtl">
 
     <LinearLayout
+
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:layoutDirection="rtl">
 
-        <!-- ================================== -->
-        <!-- כותרת -->
-        <!-- ================================== -->
+        android:orientation="vertical"
+
+        android:padding="16dp">
+
+        <!-- ================================================= -->
+        <!-- Header -->
+        <!-- ================================================= -->
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="הפרופיל שלי"
+
+            android:text="ניהול בית הכנסת"
+
             android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="@color/primary"
+
             android:gravity="center"
-            android:layout_marginBottom="6dp" />
+
+            android:layout_marginBottom="4dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ניהול פרטי בית הכנסת"
+
+            android:text="כאן תוכלו לעדכן בכל רגע את המידע שהמתפללים רואים"
+
             android:textSize="14sp"
             android:textColor="#68737D"
-            android:gravity="center"
-            android:layout_marginBottom="20dp" />
 
-        <!-- ================================== -->
-        <!-- כרטיס ראשי -->
-        <!-- ================================== -->
+            android:gravity="center"
+
+            android:layout_marginBottom="18dp" />
+
+
+        <!-- ================================================= -->
+        <!-- Status -->
+        <!-- ================================================= -->
 
         <com.google.android.material.card.MaterialCardView
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp"
+
+            android:layout_marginBottom="16dp"
+
             app:cardBackgroundColor="@android:color/white"
-            android:layout_marginBottom="16dp">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
 
             <LinearLayout
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <!-- שם -->
-
-                <TextView
-                    android:id="@+id/profileName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="בית הכנסת"
-                    android:textSize="25sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/primary"
-                    android:gravity="center"
-                    android:layout_marginBottom="8dp" />
-
-                <!-- סטטוס -->
-
                 <TextView
                     android:id="@+id/profileStatus"
+
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="פעיל"
+
+                    android:text="● פעיל"
+
                     android:textSize="13sp"
                     android:textStyle="bold"
+
                     android:textColor="#2E7D32"
+
                     android:background="#E8F5E9"
+
                     android:paddingStart="14dp"
                     android:paddingEnd="14dp"
                     android:paddingTop="6dp"
                     android:paddingBottom="6dp"
+
                     android:layout_gravity="center"
-                    android:layout_marginBottom="20dp" />
-
-                <!-- קו -->
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#E5E9EE"
-                    android:layout_marginBottom="18dp" />
-
-                <!-- ================================== -->
-                <!-- כתובת -->
-                <!-- ================================== -->
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="כתובת"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#68737D"
-                    android:layout_marginBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/profileAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="לא הוגדרה כתובת."
-                    android:textSize="16sp"
-                    android:textColor="#20252B"
                     android:layout_marginBottom="16dp" />
 
-                <!-- ================================== -->
-                <!-- טלפון -->
-                <!-- ================================== -->
-
                 <TextView
+                    android:id="@+id/profileTodayTitle"
+
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="טלפון"
-                    android:textSize="13sp"
+
+                    android:text="היום"
+
+                    android:textSize="17sp"
                     android:textStyle="bold"
-                    android:textColor="#68737D"
-                    android:layout_marginBottom="4dp" />
 
-                <TextView
-                    android:id="@+id/profilePhone"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="לא הוגדר טלפון."
-                    android:textSize="16sp"
-                    android:textColor="#20252B"
-                    android:layout_marginBottom="16dp" />
+                    android:textColor="@color/primary"
 
-                <!-- ================================== -->
-                <!-- תיאור -->
-                <!-- ================================== -->
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="אודות בית הכנסת"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#68737D"
-                    android:layout_marginBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/profileDescription"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="לא נוסף תיאור."
-                    android:textSize="16sp"
-                    android:textColor="#20252B"
-                    android:lineSpacingExtra="4dp" />
+                    android:gravity="center" />
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
 
-        <!-- ================================== -->
-        <!-- שעות תפילה -->
-        <!-- ================================== -->
+        <!-- ================================================= -->
+        <!-- Notice -->
+        <!-- ================================================= -->
 
         <com.google.android.material.card.MaterialCardView
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp"
+
+            android:layout_marginBottom="16dp"
+
             app:cardBackgroundColor="@android:color/white"
-            android:layout_marginBottom="16dp">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
 
             <LinearLayout
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+
                 android:orientation="vertical"
                 android:padding="20dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="שעות תפילה"
+
+                    android:text="🔔  עדכון למתפללים"
+
                     android:textSize="20sp"
                     android:textStyle="bold"
+
                     android:textColor="@color/primary"
-                    android:layout_marginBottom="12dp" />
+
+                    android:layout_marginBottom="6dp" />
 
                 <TextView
-                    android:id="@+id/profilePrayers"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="טוען..."
-                    android:textSize="15sp"
-                    android:textColor="#20252B"
-                    android:lineSpacingExtra="5dp" />
+
+                    android:text="הודעה קצרה וחשובה שמופיעה למתפללים"
+
+                    android:textSize="13sp"
+                    android:textColor="#68737D"
+
+                    android:layout_marginBottom="12dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:hint="לדוגמה: היום תפילת מנחה בשעה 16:30"
+
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusBottomEnd="14dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/profileNoticeInput"
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:minLines="2"
+                        android:maxLines="5"
+
+                        android:gravity="top|start"
+
+                        android:textSize="15sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
 
-        <!-- ================================== -->
-        <!-- מאפיינים -->
-        <!-- ================================== -->
+        <!-- ================================================= -->
+        <!-- Opening Hours -->
+        <!-- ================================================= -->
 
         <com.google.android.material.card.MaterialCardView
+
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp"
+
+            android:layout_marginBottom="16dp"
+
             app:cardBackgroundColor="@android:color/white"
-            android:layout_marginBottom="20dp">
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
 
             <LinearLayout
+
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+
                 android:orientation="vertical"
                 android:padding="20dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="מאפייני בית הכנסת"
-                    android:textSize="20sp"
+
+                    android:text="🕐  זמני תפילות ופעילויות"
+
+                    android:textSize="22sp"
                     android:textStyle="bold"
+
                     android:textColor="@color/primary"
-                    android:layout_marginBottom="12dp" />
+
+                    android:layout_marginBottom="4dp" />
 
                 <TextView
-                    android:id="@+id/profileFeatures"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="טוען..."
-                    android:textSize="15sp"
-                    android:textColor="#20252B"
-                    android:lineSpacingExtra="5dp" />
+
+                    android:text="בנו את הרשימה בדיוק כפי שתרצו שהמתפללים יראו אותה"
+
+                    android:textSize="13sp"
+                    android:textColor="#68737D"
+
+                    android:layout_marginBottom="16dp" />
+
+
+
+
+                <!-- ================================================= -->
+                <!-- Dynamic List -->
+                <!-- ================================================= -->
+
+                <LinearLayout
+                    android:id="@+id/profileOpeningHoursContainer"
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:orientation="vertical"
+
+                    android:layoutDirection="rtl" />
+
+
+                <!-- ================================================= -->
+                <!-- Dynamic List -->
+                <!-- ================================================= -->
+
+                <LinearLayout
+                    android:id="@+id/profileOpeningHoursContainer"
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:orientation="vertical"
+
+                    android:layoutDirection="rtl" />
+
+
+                <!-- ================================================= -->
+                <!-- Add Buttons - ALWAYS BELOW THE LIST -->
+                <!-- ================================================= -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:orientation="vertical"
+
+                    android:layout_marginTop="8dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:gravity="center_vertical"
+
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+
+                            android:layout_weight="1"
+
+                            android:text="הוסף תפילה / שעה"
+
+                            android:textSize="14sp"
+                            android:textColor="#68737D" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/profileAddOpeningHour"
+
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+
+                            android:text="+"
+                            android:textSize="23sp"
+                            android:textStyle="bold"
+
+                            android:textColor="@color/primary"
+
+                            app:cornerRadius="16dp" />
+
+                    </LinearLayout>
+
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:gravity="center_vertical"
+
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+
+                            android:layout_weight="1"
+
+                            android:text="הוסף כותרת / הפרדה"
+
+                            android:textSize="14sp"
+                            android:textColor="#68737D" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/profileAddHeader"
+
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+
+                            android:text="+"
+                            android:textSize="23sp"
+                            android:textStyle="bold"
+
+                            android:textColor="@color/primary"
+
+                            app:cornerRadius="16dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
 
-        <!-- ================================== -->
-        <!-- טעינה -->
-        <!-- ================================== -->
+        <!-- ================================================= -->
+        <!-- Lessons -->
+        <!-- ================================================= -->
+
+        <com.google.android.material.card.MaterialCardView
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginBottom="16dp"
+
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:text="📚  שיעורים ואירועים"
+
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+
+                    android:textColor="@color/primary"
+
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:text="אפשר לעדכן כאן שיעורים, אירועים ומידע שוטף."
+
+                    android:textSize="13sp"
+                    android:textColor="#68737D"
+
+                    android:layout_marginBottom="12dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:hint="לדוגמה:
+דף יומי — 19:30
+שיעור הלכה — 20:15
+שיעור פרשת שבוע — מוצאי שבת"
+
+                    app:boxBackgroundMode="outline"
+
+                    app:boxCornerRadiusTopStart="14dp"
+                    app:boxCornerRadiusTopEnd="14dp"
+                    app:boxCornerRadiusBottomStart="14dp"
+                    app:boxCornerRadiusBottomEnd="14dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/profileLessonsInput"
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:minLines="4"
+                        android:maxLines="10"
+
+                        android:gravity="top|start"
+
+                        android:textSize="15sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- ================================================= -->
+        <!-- Basic Details -->
+        <!-- ================================================= -->
+
+        <com.google.android.material.card.MaterialCardView
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginBottom="16dp"
+
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:text="🏛️  פרטי בית הכנסת"
+
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+
+                    android:textColor="@color/primary"
+
+                    android:layout_marginBottom="14dp" />
+
+                <!-- Name -->
+
+                <com.google.android.material.textfield.TextInputLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:hint="שם בית הכנסת"
+
+                    android:layout_marginBottom="12dp"
+
+                    app:boxBackgroundMode="outline">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/profileNameInput"
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:inputType="text"
+
+                        android:textSize="15sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <!-- Address -->
+
+                <com.google.android.material.textfield.TextInputLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:hint="כתובת"
+
+                    android:layout_marginBottom="12dp"
+
+                    app:boxBackgroundMode="outline">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/profileAddressInput"
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:inputType="text"
+
+                        android:textSize="15sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <!-- Phone -->
+
+                <com.google.android.material.textfield.TextInputLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:hint="טלפון"
+
+                    android:layout_marginBottom="12dp"
+
+                    app:boxBackgroundMode="outline">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/profilePhoneInput"
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:inputType="phone"
+
+                        android:textSize="15sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+
+                <!-- Description -->
+
+                <com.google.android.material.textfield.TextInputLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:hint="אודות בית הכנסת"
+
+                    app:boxBackgroundMode="outline">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/profileDescriptionInput"
+
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+
+                        android:minLines="3"
+                        android:maxLines="8"
+
+                        android:gravity="top|start"
+
+                        android:inputType="textMultiLine"
+
+                        android:textSize="15sp" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- ================================================= -->
+        <!-- Features -->
+        <!-- ================================================= -->
+
+        <com.google.android.material.card.MaterialCardView
+
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:layout_marginBottom="16dp"
+
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:text="✨  מאפייני בית הכנסת"
+
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+
+                    android:textColor="@color/primary"
+
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:text="סמנו את השירותים והמאפיינים שקיימים בבית הכנסת."
+
+                    android:textSize="13sp"
+                    android:textColor="#68737D"
+
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:id="@+id/profileFeaturesContainer"
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+
+        <!-- ================================================= -->
+        <!-- Loading -->
+        <!-- ================================================= -->
 
         <ProgressBar
             android:id="@+id/profileProgressBar"
+
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+
             android:layout_gravity="center"
+
             android:visibility="gone"
-            android:layout_marginBottom="16dp" />
+
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp" />
 
 
-        <!-- ================================== -->
-        <!-- עריכת פרופיל -->
-        <!-- ================================== -->
+        <!-- ================================================= -->
+        <!-- Save -->
+        <!-- ================================================= -->
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/editProfileButton"
+            android:id="@+id/profileSaveButton"
+
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:text="עריכת פרטי בית הכנסת"
-            android:textSize="16sp"
+            android:layout_height="56dp"
+
+            android:text="שמור שינויים"
+            android:textSize="17sp"
             android:textStyle="bold"
+
             android:textColor="@android:color/white"
-            app:cornerRadius="26dp"
+
             app:backgroundTint="@color/primary"
-            android:layout_marginBottom="24dp" />
+            app:cornerRadius="28dp"
+
+            android:layout_marginBottom="28dp" />
 
     </LinearLayout>
 

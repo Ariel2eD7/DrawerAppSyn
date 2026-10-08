@@ -213,6 +213,8 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         }
     }
 
+
+
     private void showSelectedDay() {
 
         prayerContainer.removeAllViews();
@@ -261,7 +263,112 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                     false
             );
         }
+
+        // ==========================================
+        // כפתורי הוספת שעה - תמיד מתחת לכל הכרטיסים
+        // ==========================================
+
+        addBottomAddButton(
+                "shacharit",
+                "שחרית"
+        );
+
+        addBottomAddButton(
+                "mincha",
+                "מנחה"
+        );
+
+        addBottomAddButton(
+                "maariv",
+                "ערבית"
+        );
+
+        if (selectedDay == 5 || selectedDay == 6) {
+
+            addBottomAddButton(
+                    "kabbalatShabbat",
+                    "קבלת שבת"
+            );
+
+            addBottomAddButton(
+                    "musaf",
+                    "מוסף"
+            );
+
+            addBottomAddButton(
+                    "havdalah",
+                    "הבדלה"
+            );
+        }
     }
+
+
+
+    private void addBottomAddButton(
+            String prayerKey,
+            String prayerName) {
+
+        TextView addButton =
+                new TextView(requireContext());
+
+        addButton.setText(
+                "+ הוסף שעה ל" + prayerName
+        );
+
+        addButton.setTextSize(15);
+
+        addButton.setTextColor(
+                getResources().getColor(
+                        R.color.primary
+                )
+        );
+
+        addButton.setGravity(
+                android.view.Gravity.CENTER
+        );
+
+        addButton.setPadding(
+                12,
+                14,
+                12,
+                14
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        params.setMargins(
+                0,
+                0,
+                0,
+                10
+        );
+
+        addButton.setLayoutParams(params);
+
+        addButton.setOnClickListener(v -> {
+
+            String dayKey =
+                    dayKeys[selectedDay];
+
+            ArrayList<String> times =
+                    prayerData
+                            .get(dayKey)
+                            .get(prayerKey);
+
+            showTimePicker(
+                    null,
+                    times
+            );
+        });
+
+        prayerContainer.addView(addButton);
+    }
+
+
 
     private void addPrayerRow(
             String prayerKey,
@@ -347,25 +454,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         );
 
 
-         TextView addTime =
-                new TextView(requireContext());
 
-        addTime.setText("+ הוסף שעה");
-        addTime.setTextSize(15);
-        addTime.setTextColor(
-                getResources().getColor(
-                        R.color.primary
-                )
-        );
-
-        addTime.setPadding(
-                12,
-                8,
-                12,
-                8
-        );
-
-        titleRow.addView(addTime);
 
 
 
@@ -406,17 +495,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 }
         );
 
-        addTime.setOnClickListener(v -> {
 
-            if (!checkBox.isChecked()) {
-                checkBox.setChecked(true);
-            } else {
-                showTimePicker(
-                        timesContainer,
-                        times
-                );
-            }
-        });
 
         card.addView(layout);
 

@@ -1,50 +1,125 @@
-        package com.example.profile;
+package com.example.profile;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.drawerappsyn.MainActivity;
 import com.example.drawerappsyn.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ProfileFragment extends Fragment {
 
-    private TextView profileName;
-    private TextView profileDescription;
-    private TextView profileAddress;
-    private TextView profilePhone;
-    private TextView profilePrayers;
-    private TextView profileFeatures;
-    private TextView profileStatus;
-
-    private ProgressBar progressBar;
-
-    private MaterialButton editProfileButton;
+    // =========================================================
+    // Firebase
+    // =========================================================
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
+    // =========================================================
+    // Main fields
+    // =========================================================
+
+    private EditText noticeInput;
+    private EditText lessonsInput;
+
+    private EditText nameInput;
+    private EditText addressInput;
+    private EditText phoneInput;
+    private EditText descriptionInput;
+
+    private TextView profileStatus;
+    private TextView todayTitle;
+
+    private LinearLayout openingHoursContainer;
+    private LinearLayout featuresContainer;
+
+    private ProgressBar progressBar;
+    private MaterialButton saveButton;
+
+    // =========================================================
+    // Opening hours
+    // =========================================================
+
+    private final ArrayList<View> openingRows =
+            new ArrayList<>();
+
+    // =========================================================
+    // Features
+    // =========================================================
+
+    private final String[] featureKeys = {
+            "womenSection",
+            "wheelchairAccess",
+            "parking",
+            "airConditioning",
+            "heating",
+            "mikveh",
+            "torahLessons",
+            "childrenActivities",
+            "onlineBroadcast",
+            "library",
+            "kiddush",
+            "security"
+    };
+
+    private final String[] featureNames = {
+            "עזרת נשים",
+            "נגישות לכיסאות גלגלים",
+            "חניה",
+            "מיזוג",
+            "חימום",
+            "מקווה",
+            "שיעורי תורה",
+            "פעילות לילדים",
+            "שידורים ושיעורים אונליין",
+            "ספרייה / ספרי קודש",
+            "קידוש",
+            "אבטחה"
+    };
+
+    private final Map<String, Boolean> featureData =
+            new HashMap<>();
+
+    // =========================================================
+    // Constructor
+    // =========================================================
+
     public ProfileFragment() {
         // Required empty public constructor
     }
+
+    // =========================================================
+    // Create View
+    // =========================================================
 
     @Nullable
     @Override
@@ -60,47 +135,21 @@ public class ProfileFragment extends Fragment {
         );
     }
 
+    // =========================================================
+    // View Created
+    // =========================================================
+
     @Override
     public void onViewCreated(
             @NonNull View view,
             @Nullable Bundle savedInstanceState) {
 
-        super.onViewCreated(view, savedInstanceState);
+        super.onViewCreated(
+                view,
+                savedInstanceState
+        );
 
-        // ==========================================
-        // חיבור Views
-        // ==========================================
-
-        profileName =
-                view.findViewById(R.id.profileName);
-
-        profileDescription =
-                view.findViewById(R.id.profileDescription);
-
-        profileAddress =
-                view.findViewById(R.id.profileAddress);
-
-        profilePhone =
-                view.findViewById(R.id.profilePhone);
-
-        profilePrayers =
-                view.findViewById(R.id.profilePrayers);
-
-        profileFeatures =
-                view.findViewById(R.id.profileFeatures);
-
-        profileStatus =
-                view.findViewById(R.id.profileStatus);
-
-        progressBar =
-                view.findViewById(R.id.profileProgressBar);
-
-        editProfileButton =
-                view.findViewById(R.id.editProfileButton);
-
-        // ==========================================
-        // Firebase
-        // ==========================================
+        bindViews(view);
 
         auth =
                 FirebaseAuth.getInstance();
@@ -108,69 +157,122 @@ public class ProfileFragment extends Fragment {
         db =
                 FirebaseFirestore.getInstance();
 
-        // ==========================================
-        // כפתור עריכה
-        // ==========================================
+        initializeFeatureData();
 
-        editProfileButton.setOnClickListener(v -> {
+        setupOpeningHoursButtons();
 
-            Toast.makeText(
-                    requireContext(),
-                    "מסך העריכה יתווסף בשלב הבא",
-                    Toast.LENGTH_SHORT
-            ).show();
+        setupSaveButton();
 
-        });
-
-        // ==========================================
-        // טעינת הפרופיל
-        // ==========================================
+        updateTodayTitle();
 
         loadProfile();
     }
 
-    // ==========================================
-    // הסתרת Toolbar
-    // ==========================================
+    // =========================================================
+    // Bind Views
+    // =========================================================
 
-    @Override
-    public void onResume() {
+    private void bindViews(View view) {
 
-        super.onResume();
+        noticeInput =
+                view.findViewById(
+                        R.id.profileNoticeInput
+                );
 
-        MainActivity activity =
-                (MainActivity) requireActivity();
+        lessonsInput =
+                view.findViewById(
+                        R.id.profileLessonsInput
+                );
 
-        activity.setToolbarVisible(false);
+        nameInput =
+                view.findViewById(
+                        R.id.profileNameInput
+                );
+
+        addressInput =
+                view.findViewById(
+                        R.id.profileAddressInput
+                );
+
+        phoneInput =
+                view.findViewById(
+                        R.id.profilePhoneInput
+                );
+
+        descriptionInput =
+                view.findViewById(
+                        R.id.profileDescriptionInput
+                );
+
+        profileStatus =
+                view.findViewById(
+                        R.id.profileStatus
+                );
+
+        todayTitle =
+                view.findViewById(
+                        R.id.profileTodayTitle
+                );
+
+        openingHoursContainer =
+                view.findViewById(
+                        R.id.profileOpeningHoursContainer
+                );
+
+        featuresContainer =
+                view.findViewById(
+                        R.id.profileFeaturesContainer
+                );
+
+        progressBar =
+                view.findViewById(
+                        R.id.profileProgressBar
+                );
+
+        saveButton =
+                view.findViewById(
+                        R.id.profileSaveButton
+                );
     }
 
-    // ==========================================
-    // החזרת Toolbar
-    // ==========================================
+    // =========================================================
+    // Opening Hours Buttons
+    // =========================================================
 
-    @Override
-    public void onPause() {
+    private void setupOpeningHoursButtons() {
 
-        super.onPause();
+        MaterialButton addHourButton =
+                requireView().findViewById(
+                        R.id.profileAddOpeningHour
+                );
 
-        MainActivity activity =
-                (MainActivity) requireActivity();
+        MaterialButton addHeaderButton =
+                requireView().findViewById(
+                        R.id.profileAddHeader
+                );
 
-        activity.setToolbarVisible(true);
+        addHourButton.setOnClickListener(
+                v -> addHour(
+                        "",
+                        ""
+                )
+        );
+
+        addHeaderButton.setOnClickListener(
+                v -> addHeader(
+                        ""
+                )
+        );
     }
 
-    // ==========================================
-    // טעינת נתוני המשתמש
-    // ==========================================
+    // =========================================================
+    // Load Profile
+    // =========================================================
 
     private void loadProfile() {
 
         FirebaseUser currentUser =
                 auth.getCurrentUser();
-
-        // ------------------------------------------
-        // אין משתמש מחובר
-        // ------------------------------------------
 
         if (currentUser == null) {
 
@@ -181,24 +283,17 @@ public class ProfileFragment extends Fragment {
             return;
         }
 
-        String uid =
-                currentUser.getUid();
-
         showLoading(true);
 
-        // ==========================================
-        // קריאת בית הכנסת
-        // ==========================================
-
         db.collection("synagogues_v2")
-                .document(uid)
+                .document(currentUser.getUid())
                 .get()
                 .addOnSuccessListener(
-                        documentSnapshot -> {
+                        document -> {
 
                             showLoading(false);
 
-                            if (!documentSnapshot.exists()) {
+                            if (!document.exists()) {
 
                                 showError(
                                         "לא נמצא בית כנסת המשויך לחשבון."
@@ -208,101 +303,79 @@ public class ProfileFragment extends Fragment {
                             }
 
                             displayProfile(
-                                    documentSnapshot
+                                    document
                             );
                         }
                 )
                 .addOnFailureListener(
-                        e -> {
+                        error -> {
 
                             showLoading(false);
 
                             showError(
                                     "טעינת הפרופיל נכשלה:\n"
-                                            + e.getMessage()
+                                            + error.getMessage()
                             );
                         }
                 );
     }
 
-    // ==========================================
-    // הצגת פרטי בית הכנסת
-    // ==========================================
+    // =========================================================
+    // Display Profile
+    // =========================================================
 
     private void displayProfile(
             DocumentSnapshot document) {
 
-        // ==========================================
-        // פרטים בסיסיים
-        // ==========================================
+        nameInput.setText(
+                valueOrDefault(
+                        document.getString("name"),
+                        ""
+                )
+        );
 
-        String name =
-                document.getString("name");
+        addressInput.setText(
+                valueOrDefault(
+                        document.getString("address"),
+                        ""
+                )
+        );
 
-        String description =
-                document.getString("description");
+        phoneInput.setText(
+                valueOrDefault(
+                        document.getString("phone"),
+                        ""
+                )
+        );
 
-        String address =
-                document.getString("address");
+        descriptionInput.setText(
+                valueOrDefault(
+                        document.getString("description"),
+                        ""
+                )
+        );
 
-        String phone =
-                document.getString("phone");
+        noticeInput.setText(
+                valueOrDefault(
+                        document.getString("notice"),
+                        ""
+                )
+        );
+
+        lessonsInput.setText(
+                valueOrDefault(
+                        document.getString("lessons"),
+                        ""
+                )
+        );
 
         String status =
                 document.getString("status");
 
-        // ==========================================
-        // שם
-        // ==========================================
-
-        profileName.setText(
-                valueOrDefault(
-                        name,
-                        "בית הכנסת"
-                )
-        );
-
-        // ==========================================
-        // תיאור
-        // ==========================================
-
-        profileDescription.setText(
-                valueOrDefault(
-                        description,
-                        "לא נוסף תיאור."
-                )
-        );
-
-        // ==========================================
-        // כתובת
-        // ==========================================
-
-        profileAddress.setText(
-                valueOrDefault(
-                        address,
-                        "לא הוגדרה כתובת."
-                )
-        );
-
-        // ==========================================
-        // טלפון
-        // ==========================================
-
-        profilePhone.setText(
-                valueOrDefault(
-                        phone,
-                        "לא הוגדר טלפון."
-                )
-        );
-
-        // ==========================================
-        // סטטוס
-        // ==========================================
-
         if ("active".equals(status)) {
 
             profileStatus.setText(
-                    "פעיל"
+                    "● פעיל"
             );
 
         } else {
@@ -310,287 +383,1127 @@ public class ProfileFragment extends Fragment {
             profileStatus.setText(
                     valueOrDefault(
                             status,
-                            "לא ידוע"
+                            "● לא ידוע"
                     )
             );
         }
 
-        // ==========================================
-        // תפילות
-        // ==========================================
+        // -----------------------------------------------------
+        // Opening Hours
+        // -----------------------------------------------------
 
-        Object prayersObject =
-                document.get("prayers");
+        Object openingHours =
+                document.get("openingHours");
 
-        profilePrayers.setText(
-                buildPrayerText(
-                        prayersObject
-                )
+        loadOpeningHours(
+                openingHours
         );
 
-        // ==========================================
-        // מאפיינים
-        // ==========================================
+        // -----------------------------------------------------
+        // Features
+        // -----------------------------------------------------
 
-        Object featuresObject =
+        Object features =
                 document.get("features");
 
-        profileFeatures.setText(
-                buildFeaturesText(
-                        featuresObject
-                )
+        loadFeatureData(
+                features
         );
+
+        renderFeatureEditor();
     }
 
-    // ==========================================
-    // בניית טקסט תפילות
-    // ==========================================
+    // =========================================================
+    // Load Opening Hours
+    // =========================================================
 
-    private String buildPrayerText(
-            Object prayersObject) {
+    private void loadOpeningHours(
+            Object data) {
 
-        if (!(prayersObject instanceof Map)) {
+        openingHoursContainer.removeAllViews();
+        openingRows.clear();
 
-            return "לא הוגדרו שעות תפילה.";
+        if (!(data instanceof List)) {
+            return;
         }
 
-        Map<?, ?> days =
-                (Map<?, ?>) prayersObject;
+        List<?> list =
+                (List<?>) data;
 
-        String[] dayKeys = {
-                "sunday",
-                "monday",
-                "tuesday",
-                "wednesday",
-                "thursday",
-                "friday",
-                "shabbat"
-        };
+        for (Object item : list) {
 
-        String[] dayNames = {
-                "ראשון",
-                "שני",
-                "שלישי",
-                "רביעי",
-                "חמישי",
-                "שישי",
-                "שבת"
-        };
-
-        String[] prayerKeys = {
-                "shacharit",
-                "mincha",
-                "maariv",
-                "kabbalatShabbat",
-                "musaf",
-                "havdalah"
-        };
-
-        String[] prayerNames = {
-                "שחרית",
-                "מנחה",
-                "ערבית",
-                "קבלת שבת",
-                "מוסף",
-                "הבדלה"
-        };
-
-        StringBuilder result =
-                new StringBuilder();
-
-        boolean found =
-                false;
-
-        for (int i = 0;
-             i < dayKeys.length;
-             i++) {
-
-            Object dayObject =
-                    days.get(dayKeys[i]);
-
-            if (!(dayObject instanceof Map)) {
+            if (!(item instanceof Map)) {
                 continue;
             }
 
-            Map<?, ?> prayers =
-                    (Map<?, ?>) dayObject;
+            Map<?, ?> map =
+                    (Map<?, ?>) item;
 
-            StringBuilder dayResult =
-                    new StringBuilder();
+            String type =
+                    stringValue(
+                            map.get("type")
+                    );
 
-            for (int j = 0;
-                 j < prayerKeys.length;
-                 j++) {
+            if ("header".equals(type)) {
 
-                Object timesObject =
-                        prayers.get(
-                                prayerKeys[j]
+                String text =
+                        stringValue(
+                                map.get("text")
                         );
 
-                if (!(timesObject instanceof List)) {
-                    continue;
+                if (text.isEmpty()) {
+
+                    text =
+                            stringValue(
+                                    map.get("content")
+                            );
                 }
 
-                List<?> times =
-                        (List<?>) timesObject;
-
-                if (times.isEmpty()) {
-                    continue;
-                }
-
-                if (dayResult.length() > 0) {
-                    dayResult.append("\n");
-                }
-
-                dayResult.append(
-                        prayerNames[j]
+                addHeader(
+                        text
                 );
 
-                dayResult.append(": ");
+            } else {
 
-                for (int k = 0;
-                     k < times.size();
-                     k++) {
+                String title =
+                        stringValue(
+                                map.get("title")
+                        );
 
-                    if (k > 0) {
-                        dayResult.append(", ");
-                    }
+                String content =
+                        stringValue(
+                                map.get("content")
+                        );
 
-                    dayResult.append(
-                            String.valueOf(
-                                    times.get(k)
-                            )
-                    );
-                }
-            }
-
-            if (dayResult.length() > 0) {
-
-                found = true;
-
-                result.append(
-                        "יום "
+                addHour(
+                        title,
+                        content
                 );
-
-                result.append(
-                        dayNames[i]
-                );
-
-                result.append("\n");
-
-                result.append(
-                        dayResult
-                );
-
-                result.append("\n\n");
             }
         }
-
-        if (!found) {
-
-            return "לא הוגדרו שעות תפילה.";
-        }
-
-        return result.toString().trim();
     }
 
-    // ==========================================
-    // בניית טקסט מאפיינים
-    // ==========================================
+    // =========================================================
+    // Add Hour Row
+    // =========================================================
 
-    private String buildFeaturesText(
+    private void addHour(
+            String titleText,
+            String contentText) {
+
+        LinearLayout row =
+                createBaseRow();
+
+        LinearLayout moves =
+                createMoveButtons(
+                        row
+                );
+
+        EditText title =
+                createEditText(
+                        "תפילה / פעילות",
+                        15
+                );
+
+        title.setText(
+                titleText
+        );
+
+        title.setLayoutParams(
+                createWeightParams()
+        );
+
+        EditText content =
+                createEditText(
+                        "שעה",
+                        15
+                );
+
+        content.setText(
+                contentText
+        );
+
+        content.setLayoutParams(
+                createWeightParams()
+        );
+
+        MaterialButton delete =
+                createButton(
+                        "×",
+                        Color.rgb(
+                                198,
+                                40,
+                                40
+                        ),
+                        22
+                );
+
+        LinearLayout.LayoutParams deleteParams =
+                new LinearLayout.LayoutParams(
+                        dp(42),
+                        dp(48)
+                );
+
+        delete.setLayoutParams(
+                deleteParams
+        );
+
+        delete.setOnClickListener(
+                v -> removeRow(
+                        row
+                )
+        );
+
+        moves.getChildAt(0)
+                .setOnClickListener(
+                        v -> moveRow(
+                                row,
+                                -1
+                        )
+                );
+
+        moves.getChildAt(1)
+                .setOnClickListener(
+                        v -> moveRow(
+                                row,
+                                1
+                        )
+                );
+
+        // RTL:
+        // move buttons | title | time | delete
+
+        row.addView(
+                moves
+        );
+
+        row.addView(
+                title
+        );
+
+        row.addView(
+                content
+        );
+
+        row.addView(
+                delete
+        );
+
+        addRow(
+                row
+        );
+    }
+
+    // =========================================================
+    // Add Header Row
+    // =========================================================
+
+    private void addHeader(
+            String textValue) {
+
+        LinearLayout row =
+                createBaseRow();
+
+        LinearLayout moves =
+                createMoveButtons(
+                        row
+                );
+
+        EditText header =
+                createEditText(
+                        "כותרת / הפרדה",
+                        17
+                );
+
+        header.setText(
+                textValue
+        );
+
+        header.setTextColor(
+                Color.rgb(
+                        40,
+                        40,
+                        40
+                )
+        );
+
+        header.setTypeface(
+                Typeface.DEFAULT,
+                Typeface.BOLD
+        );
+
+        header.setGravity(
+                Gravity.CENTER
+        );
+
+        header.setTextAlignment(
+                View.TEXT_ALIGNMENT_CENTER
+        );
+
+        header.setLayoutParams(
+                createWeightParams()
+        );
+
+        MaterialButton delete =
+                createButton(
+                        "×",
+                        Color.rgb(
+                                198,
+                                40,
+                                40
+                        ),
+                        22
+                );
+
+        LinearLayout.LayoutParams deleteParams =
+                new LinearLayout.LayoutParams(
+                        dp(42),
+                        dp(48)
+                );
+
+        delete.setLayoutParams(
+                deleteParams
+        );
+
+        delete.setOnClickListener(
+                v -> removeRow(
+                        row
+                )
+        );
+
+        moves.getChildAt(0)
+                .setOnClickListener(
+                        v -> moveRow(
+                                row,
+                                -1
+                        )
+                );
+
+        moves.getChildAt(1)
+                .setOnClickListener(
+                        v -> moveRow(
+                                row,
+                                1
+                        )
+                );
+
+        row.addView(
+                moves
+        );
+
+        row.addView(
+                header
+        );
+
+        row.addView(
+                delete
+        );
+
+        addRow(
+                row
+        );
+    }
+
+    // =========================================================
+    // Base Row
+    // =========================================================
+
+    private LinearLayout createBaseRow() {
+
+        LinearLayout row =
+                new LinearLayout(
+                        requireContext()
+                );
+
+        row.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
+
+        row.setGravity(
+                Gravity.CENTER_VERTICAL
+        );
+
+        row.setPadding(
+                dp(8),
+                dp(8),
+                dp(8),
+                dp(8)
+        );
+
+        row.setBackground(
+                createRowBackground()
+        );
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+
+        params.setMargins(
+                0,
+                0,
+                0,
+                dp(10)
+        );
+
+        row.setLayoutParams(
+                params
+        );
+
+        return row;
+    }
+
+    // =========================================================
+    // Row Background
+    // =========================================================
+
+    private GradientDrawable createRowBackground() {
+
+        GradientDrawable drawable =
+                new GradientDrawable();
+
+        drawable.setColor(
+                Color.WHITE
+        );
+
+        drawable.setCornerRadius(
+                dp(18)
+        );
+
+        drawable.setStroke(
+                dp(1),
+                Color.rgb(
+                        225,
+                        229,
+                        234
+                )
+        );
+
+        return drawable;
+    }
+
+    // =========================================================
+    // Move Buttons
+    // =========================================================
+
+    private LinearLayout createMoveButtons(
+            View row) {
+
+        LinearLayout moves =
+                new LinearLayout(
+                        requireContext()
+                );
+
+        moves.setOrientation(
+                LinearLayout.HORIZONTAL
+        );
+
+        moves.setGravity(
+                Gravity.CENTER
+        );
+
+        moves.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        dp(92),
+                        dp(48)
+                )
+        );
+
+        MaterialButton up =
+                createButton(
+                        "▲",
+                        Color.DKGRAY,
+                        17
+                );
+
+        MaterialButton down =
+                createButton(
+                        "▼",
+                        Color.DKGRAY,
+                        17
+                );
+
+        up.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        dp(44),
+                        dp(46)
+                )
+        );
+
+        down.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        dp(44),
+                        dp(46)
+                )
+        );
+
+        moves.addView(
+                up
+        );
+
+        moves.addView(
+                down
+        );
+
+        return moves;
+    }
+
+    // =========================================================
+    // Edit Text
+    // =========================================================
+
+    private EditText createEditText(
+            String hint,
+            float size) {
+
+        EditText editText =
+                new EditText(
+                        requireContext()
+                );
+
+        editText.setHint(
+                hint
+        );
+
+        editText.setTextSize(
+                size
+        );
+
+        editText.setSingleLine(
+                true
+        );
+
+        editText.setPadding(
+                dp(8),
+                0,
+                dp(8),
+                0
+        );
+
+        editText.setTextDirection(
+                View.TEXT_DIRECTION_RTL
+        );
+
+        return editText;
+    }
+
+    // =========================================================
+    // Button
+    // =========================================================
+
+    private MaterialButton createButton(
+            String text,
+            int color,
+            float size) {
+
+        MaterialButton button =
+                new MaterialButton(
+                        requireContext()
+                );
+
+        button.setText(
+                text
+        );
+
+        button.setTextSize(
+                size
+        );
+
+        button.setTextColor(
+                color
+        );
+
+        button.setGravity(
+                Gravity.CENTER
+        );
+
+        button.setPadding(
+                0,
+                0,
+                0,
+                0
+        );
+
+        button.setMinWidth(
+                0
+        );
+
+        button.setMinimumWidth(
+                0
+        );
+
+        button.setMinHeight(
+                0
+        );
+
+        button.setMinimumHeight(
+                0
+        );
+
+        button.setAllCaps(
+                false
+        );
+
+        return button;
+    }
+
+    // =========================================================
+    // Weight Params
+    // =========================================================
+
+    private LinearLayout.LayoutParams createWeightParams() {
+
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(
+                        0,
+                        dp(48),
+                        1
+                );
+
+        params.setMargins(
+                dp(3),
+                0,
+                dp(3),
+                0
+        );
+
+        return params;
+    }
+
+    // =========================================================
+    // Add Row
+    // =========================================================
+
+    private void addRow(
+            View row) {
+
+        openingHoursContainer.addView(
+                row
+        );
+
+        openingRows.add(
+                row
+        );
+
+        updateMoveButtons();
+    }
+
+    // =========================================================
+    // Remove Row
+    // =========================================================
+
+    private void removeRow(
+            View row) {
+
+        openingHoursContainer.removeView(
+                row
+        );
+
+        openingRows.remove(
+                row
+        );
+
+        updateMoveButtons();
+    }
+
+    // =========================================================
+    // Move Row
+    // =========================================================
+
+    private void moveRow(
+            View row,
+            int direction) {
+
+        int currentIndex =
+                openingHoursContainer.indexOfChild(
+                        row
+                );
+
+        int newIndex =
+                currentIndex + direction;
+
+        if (currentIndex < 0) {
+            return;
+        }
+
+        if (newIndex < 0) {
+            return;
+        }
+
+        if (newIndex >=
+                openingHoursContainer.getChildCount()) {
+
+            return;
+        }
+
+        openingHoursContainer.removeView(
+                row
+        );
+
+        openingHoursContainer.addView(
+                row,
+                newIndex
+        );
+
+        openingRows.remove(
+                row
+        );
+
+        openingRows.add(
+                newIndex,
+                row
+        );
+
+        updateMoveButtons();
+    }
+
+    // =========================================================
+    // Update Move Buttons
+    // =========================================================
+
+    private void updateMoveButtons() {
+
+        int count =
+                openingHoursContainer.getChildCount();
+
+        for (int i = 0; i < count; i++) {
+
+            View view =
+                    openingHoursContainer.getChildAt(
+                            i
+                    );
+
+            if (!(view instanceof LinearLayout)) {
+                continue;
+            }
+
+            LinearLayout row =
+                    (LinearLayout) view;
+
+            if (row.getChildCount() == 0) {
+                continue;
+            }
+
+            View first =
+                    row.getChildAt(0);
+
+            if (!(first instanceof LinearLayout)) {
+                continue;
+            }
+
+            LinearLayout moves =
+                    (LinearLayout) first;
+
+            if (moves.getChildCount() < 2) {
+                continue;
+            }
+
+            moves.getChildAt(0)
+                    .setEnabled(
+                            i > 0
+                    );
+
+            moves.getChildAt(1)
+                    .setEnabled(
+                            i < count - 1
+                    );
+        }
+    }
+
+    // =========================================================
+    // Get Opening Hours
+    // =========================================================
+
+    private ArrayList<Map<String, String>>
+    getOpeningHours() {
+
+        ArrayList<Map<String, String>> list =
+                new ArrayList<>();
+
+        for (int i = 0;
+             i < openingHoursContainer.getChildCount();
+             i++) {
+
+            View view =
+                    openingHoursContainer.getChildAt(
+                            i
+                    );
+
+            if (!(view instanceof LinearLayout)) {
+                continue;
+            }
+
+            LinearLayout row =
+                    (LinearLayout) view;
+
+            int childCount =
+                    row.getChildCount();
+
+            // -------------------------------------------------
+            // Header
+            // -------------------------------------------------
+
+            if (childCount == 3) {
+
+                View field =
+                        row.getChildAt(1);
+
+                if (!(field instanceof EditText)) {
+                    continue;
+                }
+
+                String text =
+                        ((EditText) field)
+                                .getText()
+                                .toString()
+                                .trim();
+
+                if (TextUtils.isEmpty(text)) {
+                    continue;
+                }
+
+                Map<String, String> item =
+                        new HashMap<>();
+
+                item.put(
+                        "type",
+                        "header"
+                );
+
+                item.put(
+                        "text",
+                        text
+                );
+
+                list.add(
+                        item
+                );
+            }
+
+            // -------------------------------------------------
+            // Normal hour
+            // -------------------------------------------------
+
+            else if (childCount == 4) {
+
+                View titleView =
+                        row.getChildAt(1);
+
+                View contentView =
+                        row.getChildAt(2);
+
+                if (!(titleView instanceof EditText)
+                        || !(contentView instanceof EditText)) {
+
+                    continue;
+                }
+
+                String title =
+                        ((EditText) titleView)
+                                .getText()
+                                .toString()
+                                .trim();
+
+                String content =
+                        ((EditText) contentView)
+                                .getText()
+                                .toString()
+                                .trim();
+
+                if (TextUtils.isEmpty(title)
+                        && TextUtils.isEmpty(content)) {
+
+                    continue;
+                }
+
+                Map<String, String> item =
+                        new HashMap<>();
+
+                item.put(
+                        "type",
+                        "normal"
+                );
+
+                item.put(
+                        "title",
+                        title
+                );
+
+                item.put(
+                        "content",
+                        content
+                );
+
+                list.add(
+                        item
+                );
+            }
+        }
+
+        return list;
+    }
+
+    // =========================================================
+    // Features
+    // =========================================================
+
+    private void initializeFeatureData() {
+
+        featureData.clear();
+
+        for (String key : featureKeys) {
+
+            featureData.put(
+                    key,
+                    false
+            );
+        }
+    }
+
+    private void loadFeatureData(
             Object featuresObject) {
 
-        if (!(featuresObject instanceof Map)) {
+        initializeFeatureData();
 
-            return "לא נבחרו מאפיינים.";
+        if (!(featuresObject instanceof Map)) {
+            return;
         }
 
         Map<?, ?> features =
                 (Map<?, ?>) featuresObject;
 
-        String[] keys = {
-                "womenSection",
-                "wheelchairAccess",
-                "parking",
-                "airConditioning",
-                "heating",
-                "mikveh",
-                "torahLessons",
-                "childrenActivities",
-                "onlineBroadcast",
-                "library",
-                "kiddush",
-                "security"
-        };
-
-        String[] names = {
-                "עזרת נשים",
-                "נגישות לכיסאות גלגלים",
-                "חניה",
-                "מיזוג",
-                "חימום",
-                "מקווה",
-                "שיעורי תורה",
-                "פעילות לילדים",
-                "שידורים ושיעורים אונליין",
-                "ספרייה / ספרי קודש",
-                "קידוש",
-                "אבטחה"
-        };
-
-        StringBuilder result =
-                new StringBuilder();
-
-        boolean found =
-                false;
-
-        for (int i = 0;
-             i < keys.length;
-             i++) {
+        for (String key : featureKeys) {
 
             Object value =
-                    features.get(keys[i]);
+                    features.get(key);
 
-            if (value instanceof Boolean &&
-                    (Boolean) value) {
+            if (value instanceof Boolean) {
 
-                found = true;
-
-                result.append("• ");
-                result.append(names[i]);
-                result.append("\n");
+                featureData.put(
+                        key,
+                        (Boolean) value
+                );
             }
         }
-
-        if (!found) {
-
-            return "לא נבחרו מאפיינים.";
-        }
-
-        return result.toString().trim();
     }
 
-    // ==========================================
-    // ערך ברירת מחדל
-    // ==========================================
+    private void renderFeatureEditor() {
 
-    private String valueOrDefault(
-            String value,
-            String defaultValue) {
+        featuresContainer.removeAllViews();
 
-        if (TextUtils.isEmpty(value)) {
-            return defaultValue;
+        for (int i = 0;
+             i < featureKeys.length;
+             i++) {
+
+            String key =
+                    featureKeys[i];
+
+            String name =
+                    featureNames[i];
+
+            android.widget.CheckBox checkBox =
+                    new android.widget.CheckBox(
+                            requireContext()
+                    );
+
+            checkBox.setText(
+                    name
+            );
+
+            checkBox.setTextSize(
+                    15
+            );
+
+            checkBox.setChecked(
+                    Boolean.TRUE.equals(
+                            featureData.get(key)
+                    )
+            );
+
+            checkBox.setPadding(
+                    0,
+                    dp(5),
+                    0,
+                    dp(5)
+            );
+
+            checkBox.setOnCheckedChangeListener(
+                    (buttonView, isChecked) ->
+                            featureData.put(
+                                    key,
+                                    isChecked
+                            )
+            );
+
+            featuresContainer.addView(
+                    checkBox
+            );
         }
-
-        return value;
     }
 
-    // ==========================================
+    // =========================================================
+    // Save
+    // =========================================================
+
+    private void setupSaveButton() {
+
+        saveButton.setOnClickListener(
+                v -> saveProfile()
+        );
+    }
+
+    private void saveProfile() {
+
+        FirebaseUser currentUser =
+                auth.getCurrentUser();
+
+        if (currentUser == null) {
+
+            showError(
+                    "לא נמצא משתמש מחובר."
+            );
+
+            return;
+        }
+
+        String name =
+                nameInput.getText()
+                        .toString()
+                        .trim();
+
+        if (name.isEmpty()) {
+
+            nameInput.setError(
+                    "יש להזין שם בית כנסת"
+            );
+
+            nameInput.requestFocus();
+
+            return;
+        }
+
+        showLoading(true);
+
+        String uid =
+                currentUser.getUid();
+
+        Map<String, Object> updates =
+                new HashMap<>();
+
+        updates.put(
+                "name",
+                name
+        );
+
+        updates.put(
+                "address",
+                addressInput.getText()
+                        .toString()
+                        .trim()
+        );
+
+        updates.put(
+                "phone",
+                phoneInput.getText()
+                        .toString()
+                        .trim()
+        );
+
+        updates.put(
+                "description",
+                descriptionInput.getText()
+                        .toString()
+                        .trim()
+        );
+
+        updates.put(
+                "notice",
+                noticeInput.getText()
+                        .toString()
+                        .trim()
+        );
+
+        updates.put(
+                "lessons",
+                lessonsInput.getText()
+                        .toString()
+                        .trim()
+        );
+
+        // -----------------------------------------------------
+        // New modular opening hours
+        // -----------------------------------------------------
+
+        updates.put(
+                "openingHours",
+                getOpeningHours()
+        );
+
+        updates.put(
+                "features",
+                new HashMap<>(
+                        featureData
+                )
+        );
+
+        updates.put(
+                "updatedAt",
+                FieldValue.serverTimestamp()
+        );
+
+        db.collection("synagogues_v2")
+                .document(uid)
+                .update(updates)
+                .addOnSuccessListener(
+                        unused -> {
+
+                            showLoading(false);
+
+                            Toast.makeText(
+                                    requireContext(),
+                                    "השינויים נשמרו בהצלחה",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        }
+                )
+                .addOnFailureListener(
+                        error -> {
+
+                            showLoading(false);
+
+                            showError(
+                                    "שמירת השינויים נכשלה:\n"
+                                            + error.getMessage()
+                            );
+                        }
+                );
+    }
+
+    // =========================================================
+    // Today
+    // =========================================================
+
+    private void updateTodayTitle() {
+
+        if (todayTitle == null) {
+            return;
+        }
+
+        CalendarHelper calendar =
+                new CalendarHelper();
+
+        todayTitle.setText(
+                "היום · " + calendar.getHebrewDay()
+        );
+    }
+
+    // =========================================================
     // Loading
-    // ==========================================
+    // =========================================================
 
-    private void showLoading(boolean loading) {
+    private void showLoading(
+            boolean loading) {
 
         if (progressBar != null) {
 
@@ -601,24 +1514,135 @@ public class ProfileFragment extends Fragment {
             );
         }
 
-        if (editProfileButton != null) {
+        if (saveButton != null) {
 
-            editProfileButton.setEnabled(
+            saveButton.setEnabled(
                     !loading
             );
         }
     }
 
-    // ==========================================
-    // שגיאה
-    // ==========================================
+    // =========================================================
+    // Error
+    // =========================================================
 
-    private void showError(String message) {
+    private void showError(
+            String message) {
 
         Toast.makeText(
                 requireContext(),
                 message,
                 Toast.LENGTH_LONG
         ).show();
+    }
+
+    // =========================================================
+    // String helper
+    // =========================================================
+
+    private String stringValue(
+            Object value) {
+
+        return value == null
+                ? ""
+                : String.valueOf(value);
+    }
+
+    private String valueOrDefault(
+            String value,
+            String defaultValue) {
+
+        return TextUtils.isEmpty(value)
+                ? defaultValue
+                : value;
+    }
+
+    // =========================================================
+    // DP
+    // =========================================================
+
+    private int dp(int value) {
+
+        float density =
+                getResources()
+                        .getDisplayMetrics()
+                        .density;
+
+        return Math.round(
+                value * density
+        );
+    }
+
+    // =========================================================
+    // Toolbar
+    // =========================================================
+
+    @Override
+    public void onResume() {
+
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(
+                false
+        );
+    }
+
+    @Override
+    public void onPause() {
+
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(
+                true
+        );
+    }
+
+    // =========================================================
+    // Small calendar helper
+    // =========================================================
+
+    private static class CalendarHelper {
+
+        String getHebrewDay() {
+
+            java.util.Calendar calendar =
+                    java.util.Calendar.getInstance();
+
+            int day =
+                    calendar.get(
+                            java.util.Calendar.DAY_OF_WEEK
+                    );
+
+            switch (day) {
+
+                case java.util.Calendar.SUNDAY:
+                    return "יום ראשון";
+
+                case java.util.Calendar.MONDAY:
+                    return "יום שני";
+
+                case java.util.Calendar.TUESDAY:
+                    return "יום שלישי";
+
+                case java.util.Calendar.WEDNESDAY:
+                    return "יום רביעי";
+
+                case java.util.Calendar.THURSDAY:
+                    return "יום חמישי";
+
+                case java.util.Calendar.FRIDAY:
+                    return "יום שישי";
+
+                case java.util.Calendar.SATURDAY:
+                default:
+                    return "יום שבת";
+            }
+        }
     }
 }
