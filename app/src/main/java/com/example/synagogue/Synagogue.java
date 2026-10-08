@@ -1,6 +1,8 @@
 package com.example.synagogue;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +23,30 @@ public class Synagogue implements Serializable {
     private double latitude;
     private double longitude;
 
-    private Map<String, Map<String, List<String>>> prayers;
+    // =========================================================
+    // Prayers
+    //
+    // Firestore may contain old and new structures.
+    //
+    // New:
+    //
+    // prayers
+    //   sunday
+    //      [
+    //          {
+    //              type: "normal",
+    //              title: "...",
+    //              content: "..."
+    //          }
+    //      ]
+    //
+    // Old data may contain a List instead of a Map.
+    //
+    // Therefore Object is used here to prevent Firestore
+    // deserialization crashes.
+    // =========================================================
+
+    private Object prayers;
 
     private Map<String, Boolean> features;
 
@@ -31,6 +56,10 @@ public class Synagogue implements Serializable {
         // Required empty constructor for Firestore
     }
 
+    // =========================================================
+    // ID
+    // =========================================================
+
     public String getId() {
         return id;
     }
@@ -38,6 +67,10 @@ public class Synagogue implements Serializable {
     public void setId(String id) {
         this.id = id;
     }
+
+    // =========================================================
+    // Owner
+    // =========================================================
 
     public String getOwnerId() {
         return ownerId;
@@ -54,6 +87,10 @@ public class Synagogue implements Serializable {
     public void setOwnerEmail(String ownerEmail) {
         this.ownerEmail = ownerEmail;
     }
+
+    // =========================================================
+    // Basic Details
+    // =========================================================
 
     public String getName() {
         return name;
@@ -87,6 +124,10 @@ public class Synagogue implements Serializable {
         this.description = description;
     }
 
+    // =========================================================
+    // Location
+    // =========================================================
+
     public double getLatitude() {
         return latitude;
     }
@@ -103,14 +144,97 @@ public class Synagogue implements Serializable {
         this.longitude = longitude;
     }
 
-    public Map<String, Map<String, List<String>>> getPrayers() {
+    // =========================================================
+    // Prayers
+    // =========================================================
+
+    public Object getPrayers() {
         return prayers;
     }
 
-    public void setPrayers(
-            Map<String, Map<String, List<String>>> prayers) {
+    public void setPrayers(Object prayers) {
         this.prayers = prayers;
     }
+
+    // =========================================================
+    // Returns prayers in the NEW structure only
+    //
+    // If Firestore contains an old List structure,
+    // an empty Map is returned instead of crashing.
+    // =========================================================
+
+    @SuppressWarnings("unchecked")
+    public Map<String, List<Map<String, String>>> getPrayerMap() {
+
+        Map<String, List<Map<String, String>>> result =
+                new HashMap<>();
+
+        if (!(prayers instanceof Map)) {
+            return result;
+        }
+
+        Map<?, ?> rawMap = (Map<?, ?>) prayers;
+
+        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+
+            if (!(entry.getKey() instanceof String)) {
+                continue;
+            }
+
+            String day = (String) entry.getKey();
+
+            Object value = entry.getValue();
+
+            if (!(value instanceof List)) {
+                continue;
+            }
+
+            List<?> rawRows = (List<?>) value;
+
+            List<Map<String, String>> rows =
+                    new ArrayList<>();
+
+            for (Object rawRow : rawRows) {
+
+                if (!(rawRow instanceof Map)) {
+                    continue;
+                }
+
+                Map<?, ?> rawRowMap =
+                        (Map<?, ?>) rawRow;
+
+                Map<String, String> row =
+                        new HashMap<>();
+
+                for (Map.Entry<?, ?> rowEntry :
+                        rawRowMap.entrySet()) {
+
+                    if (rowEntry.getKey() == null) {
+                        continue;
+                    }
+
+                    if (rowEntry.getValue() == null) {
+                        continue;
+                    }
+
+                    row.put(
+                            String.valueOf(rowEntry.getKey()),
+                            String.valueOf(rowEntry.getValue())
+                    );
+                }
+
+                rows.add(row);
+            }
+
+            result.put(day, rows);
+        }
+
+        return result;
+    }
+
+    // =========================================================
+    // Features
+    // =========================================================
 
     public Map<String, Boolean> getFeatures() {
         return features;
@@ -118,8 +242,13 @@ public class Synagogue implements Serializable {
 
     public void setFeatures(
             Map<String, Boolean> features) {
+
         this.features = features;
     }
+
+    // =========================================================
+    // Status
+    // =========================================================
 
     public String getStatus() {
         return status;
@@ -129,9 +258,13 @@ public class Synagogue implements Serializable {
         this.status = status;
     }
 
+    // =========================================================
+    // Has Feature
+    // =========================================================
+
     public boolean hasFeature(String key) {
 
-        if (features == null) {
+        if (features == null || key == null) {
             return false;
         }
 
@@ -139,6 +272,10 @@ public class Synagogue implements Serializable {
                 features.get(key)
         );
     }
+
+    // =========================================================
+    // Feature Count
+    // =========================================================
 
     public int getFeatureCount() {
 
@@ -148,7 +285,8 @@ public class Synagogue implements Serializable {
 
         int count = 0;
 
-        for (Boolean value : features.values()) {
+        for (Boolean value :
+                features.values()) {
 
             if (Boolean.TRUE.equals(value)) {
                 count++;
@@ -158,26 +296,62 @@ public class Synagogue implements Serializable {
         return count;
     }
 
+    // =========================================================
+    // Prayer Count
+    //
+    // Counts only valid prayer/activity rows.
+    // Headers are ignored.
+    // Old/invalid Firestore structures are ignored safely.
+    // =========================================================
+
     public int getPrayerCount() {
 
-        if (prayers == null) {
+        Map<String, List<Map<String, String>>> prayerMap =
+                getPrayerMap();
+
+        if (prayerMap.isEmpty()) {
             return 0;
         }
 
         int count = 0;
 
-        for (Map<String, List<String>> day :
-                prayers.values()) {
+        for (List<Map<String, String>> rows :
+                prayerMap.values()) {
 
-            if (day == null) {
+            if (rows == null) {
                 continue;
             }
 
-            for (List<String> times :
-                    day.values()) {
+            for (Map<String, String> row :
+                    rows) {
 
-                if (times != null) {
-                    count += times.size();
+                if (row == null) {
+                    continue;
+                }
+
+                String type =
+                        row.get("type");
+
+                if ("header".equalsIgnoreCase(type)) {
+                    continue;
+                }
+
+                String title =
+                        row.get("title");
+
+                String content =
+                        row.get("content");
+
+                boolean hasTitle =
+                        title != null &&
+                                !title.trim().isEmpty();
+
+                boolean hasContent =
+                        content != null &&
+                                !content.trim().isEmpty();
+
+                if (hasTitle || hasContent) {
+                    count++;
                 }
             }
         }
@@ -185,9 +359,13 @@ public class Synagogue implements Serializable {
         return count;
     }
 
+    // =========================================================
+    // Has Location
+    // =========================================================
+
     public boolean hasLocation() {
 
-        return latitude != 0 &&
-                longitude != 0;
+        return latitude != 0.0 &&
+                longitude != 0.0;
     }
 }
