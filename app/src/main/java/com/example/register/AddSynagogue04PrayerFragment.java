@@ -32,15 +32,24 @@ public class AddSynagogue04PrayerFragment extends Fragment {
     private LinearLayout prayerContainer;
 
     // =========================================================
-    // Prayer Data
+    // Prayer / Opening Hours Data
     //
-    // A single list of rows.
+    // Firestore structure:
     //
-    // Each row:
+    // openingHours: [
     //
-    // type    = normal / header
-    // title   = prayer name / header
-    // content = time
+    //   {
+    //      type: "header",
+    //      text: "תפילות יום חול"
+    //   },
+    //
+    //   {
+    //      type: "normal",
+    //      title: "שחרית",
+    //      content: "05:45"
+    //   }
+    //
+    // ]
     //
     // =========================================================
 
@@ -62,8 +71,20 @@ public class AddSynagogue04PrayerFragment extends Fragment {
     private static class PrayerRow {
 
         String type;
+
+        // Normal row:
+        // title + content
+        //
+        // Header row:
+        // text
+
         String title;
         String content;
+        String text;
+
+        // -----------------------------------------------------
+        // Normal
+        // -----------------------------------------------------
 
         PrayerRow(
                 String type,
@@ -73,6 +94,21 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             this.type = type;
             this.title = title;
             this.content = content;
+            this.text = "";
+        }
+
+        // -----------------------------------------------------
+        // Header
+        // -----------------------------------------------------
+
+        PrayerRow(
+                String type,
+                String text) {
+
+            this.type = type;
+            this.title = "";
+            this.content = "";
+            this.text = text;
         }
     }
 
@@ -129,7 +165,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 );
 
         // -----------------------------------------------------
-        // Restore existing data if available
+        // Restore existing data
         // -----------------------------------------------------
 
         restorePrayerData();
@@ -163,7 +199,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         );
 
         // -----------------------------------------------------
-        // Render existing rows
+        // Render
         // -----------------------------------------------------
 
         renderAllRows();
@@ -171,14 +207,31 @@ public class AddSynagogue04PrayerFragment extends Fragment {
 
     // =========================================================
     // Restore Prayer Data
+    //
+    // Supports:
+    //
+    // NEW:
+    //
+    // header:
+    // type
+    // text
+    //
+    // normal:
+    // type
+    // title
+    // content
+    //
+    // Also supports old data where header text was stored
+    // inside "title".
+    //
     // =========================================================
 
-    @SuppressWarnings("unchecked")
     private void restorePrayerData() {
 
         prayerData.clear();
 
-        Bundle arguments = getArguments();
+        Bundle arguments =
+                getArguments();
 
         if (arguments == null) {
             return;
@@ -189,6 +242,18 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                         "prayerData"
                 );
 
+        // -----------------------------------------------------
+        // If prayerData doesn't exist, try openingHours
+        // -----------------------------------------------------
+
+        if (!(savedObject instanceof ArrayList)) {
+
+            savedObject =
+                    arguments.getSerializable(
+                            "openingHours"
+                    );
+        }
+
         if (!(savedObject instanceof ArrayList)) {
             return;
         }
@@ -196,33 +261,102 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         ArrayList<?> savedRows =
                 (ArrayList<?>) savedObject;
 
-        for (Object object : savedRows) {
+        for (Object object :
+                savedRows) {
 
-            if (!(object instanceof HashMap)) {
+            if (!(object instanceof HashMap)
+                    && !(object instanceof java.util.Map)) {
+
                 continue;
             }
 
-            HashMap<?, ?> item =
-                    (HashMap<?, ?>) object;
+            java.util.Map<?, ?> item =
+                    (java.util.Map<?, ?>) object;
+
+            Object typeObject =
+                    item.get("type");
 
             String type =
-                    item.get("type") instanceof String
-                            ? (String) item.get("type")
-                            : "normal";
+                    typeObject == null
+                            ? "normal"
+                            : String.valueOf(
+                            typeObject
+                    );
+
+            // =================================================
+            // HEADER
+            // =================================================
+
+            if ("header".equalsIgnoreCase(type)) {
+
+                Object textObject =
+                        item.get("text");
+
+                String text = "";
+
+                if (textObject != null) {
+
+                    text =
+                            String.valueOf(
+                                    textObject
+                            ).trim();
+
+                } else {
+
+                    // -------------------------------------------------
+                    // Backward compatibility:
+                    // Old version stored header in "title"
+                    // -------------------------------------------------
+
+                    Object oldTitle =
+                            item.get("title");
+
+                    if (oldTitle != null) {
+
+                        text =
+                                String.valueOf(
+                                        oldTitle
+                                ).trim();
+                    }
+                }
+
+                prayerData.add(
+                        new PrayerRow(
+                                "header",
+                                text
+                        )
+                );
+
+                continue;
+            }
+
+            // =================================================
+            // NORMAL
+            // =================================================
+
+            Object titleObject =
+                    item.get("title");
+
+            Object contentObject =
+                    item.get("content");
 
             String title =
-                    item.get("title") instanceof String
-                            ? (String) item.get("title")
-                            : "";
+                    titleObject == null
+                            ? ""
+                            : String.valueOf(
+                            titleObject
+                    ).trim();
 
             String content =
-                    item.get("content") instanceof String
-                            ? (String) item.get("content")
-                            : "";
+                    contentObject == null
+                            ? ""
+                            : String.valueOf(
+                            contentObject
+                    ).trim();
 
             prayerData.add(
                     new PrayerRow(
-                            type,
+                            "normal",
                             title,
                             content
                     )
@@ -247,6 +381,10 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                         R.id.buttonAddHeader
                 );
 
+        // -----------------------------------------------------
+        // Add Prayer
+        // -----------------------------------------------------
+
         if (addPrayer != null) {
 
             addPrayer.setOnClickListener(
@@ -257,6 +395,10 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                             )
             );
         }
+
+        // -----------------------------------------------------
+        // Add Header
+        // -----------------------------------------------------
 
         if (addHeader != null) {
 
@@ -303,8 +445,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         PrayerRow model =
                 new PrayerRow(
                         "header",
-                        textValue,
-                        ""
+                        textValue
                 );
 
         prayerData.add(
@@ -328,7 +469,8 @@ public class AddSynagogue04PrayerFragment extends Fragment {
 
         prayerContainer.removeAllViews();
 
-        for (PrayerRow model : prayerData) {
+        for (PrayerRow model :
+                prayerData) {
 
             renderRow(
                     model
@@ -351,23 +493,27 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         LinearLayout moves =
                 createMoveButtons();
 
+        // =====================================================
+        // TITLE / HEADER TEXT
+        // =====================================================
+
         EditText title =
                 createEditText(
                         "תפילה / פעילות",
                         15
                 );
 
-        title.setText(
-                model.title
-        );
-
-        title.setLayoutParams(
-                createWeightParams()
-        );
+        // -----------------------------------------------------
+        // Header
+        // -----------------------------------------------------
 
         if ("header".equals(
                 model.type
         )) {
+
+            title.setText(
+                    model.text
+            );
 
             title.setHint(
                     "כותרת / הפרדה"
@@ -393,15 +539,41 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             title.setGravity(
                     Gravity.CENTER
             );
+
+        } else {
+
+            // -------------------------------------------------
+            // Normal
+            // -------------------------------------------------
+
+            title.setText(
+                    model.title
+            );
         }
+
+        title.setLayoutParams(
+                createWeightParams()
+        );
+
+        // =====================================================
+        // Add move buttons
+        // =====================================================
 
         row.addView(
                 moves
         );
 
+        // =====================================================
+        // Add title / header
+        // =====================================================
+
         row.addView(
                 title
         );
+
+        // =====================================================
+        // Content / Time
+        // =====================================================
 
         EditText content = null;
 
@@ -428,6 +600,10 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             );
         }
 
+        // =====================================================
+        // Delete
+        // =====================================================
+
         MaterialButton delete =
                 createButton(
                         "×",
@@ -450,9 +626,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 delete
         );
 
-        // -----------------------------------------------------
-        // Delete
-        // -----------------------------------------------------
+        // =====================================================
+        // Delete Listener
+        // =====================================================
 
         delete.setOnClickListener(
                 v -> {
@@ -465,9 +641,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 }
         );
 
-        // -----------------------------------------------------
+        // =====================================================
         // Move Up
-        // -----------------------------------------------------
+        // =====================================================
 
         moves.getChildAt(0)
                 .setOnClickListener(
@@ -478,9 +654,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                                 )
                 );
 
-        // -----------------------------------------------------
+        // =====================================================
         // Move Down
-        // -----------------------------------------------------
+        // =====================================================
 
         moves.getChildAt(1)
                 .setOnClickListener(
@@ -491,26 +667,39 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                                 )
                 );
 
-        // -----------------------------------------------------
-        // Title
-        // -----------------------------------------------------
+        // =====================================================
+        // Title / Header Text
+        // =====================================================
 
         title.setOnFocusChangeListener(
                 (v, hasFocus) -> {
 
                     if (!hasFocus) {
 
-                        model.title =
+                        String value =
                                 title.getText()
                                         .toString()
                                         .trim();
+
+                        if ("header".equals(
+                                model.type
+                        )) {
+
+                            model.text =
+                                    value;
+
+                        } else {
+
+                            model.title =
+                                    value;
+                        }
                     }
                 }
         );
 
-        // -----------------------------------------------------
+        // =====================================================
         // Content
-        // -----------------------------------------------------
+        // =====================================================
 
         if (content != null) {
 
@@ -582,15 +771,12 @@ public class AddSynagogue04PrayerFragment extends Fragment {
 
                         title.requestFocus();
 
-                        if (title instanceof EditText) {
+                        EditText editText =
+                                (EditText) title;
 
-                            EditText editText =
-                                    (EditText) title;
-
-                            editText.setSelection(
-                                    editText.length()
-                            );
-                        }
+                        editText.setSelection(
+                                editText.length()
+                        );
                     }
             );
         }
@@ -966,7 +1152,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
     private void continueToNextStep() {
 
         // -----------------------------------------------------
-        // First update current visible fields
+        // Update visible fields first
         // -----------------------------------------------------
 
         syncVisibleRows();
@@ -993,17 +1179,30 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                     );
         }
 
-        // -----------------------------------------------------
-        // Build prayer data
+        // =====================================================
+        // Build Bundle Data
         //
-        // list
-        //   -> type
-        //   -> title
-        //   -> content
-        // -----------------------------------------------------
+        // IMPORTANT:
+        //
+        // Header:
+        //
+        // {
+        //   type: "header",
+        //   text: "תפילות יום חול"
+        // }
+        //
+        // Normal:
+        //
+        // {
+        //   type: "normal",
+        //   title: "שחרית",
+        //   content: "05:45"
+        // }
+        //
+        // =====================================================
 
         ArrayList<HashMap<String, String>>
-                bundlePrayerData =
+                bundleOpeningHours =
                 new ArrayList<>();
 
         for (PrayerRow prayerRow :
@@ -1012,37 +1211,77 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             HashMap<String, String> item =
                     new HashMap<>();
 
-            item.put(
-                    "type",
+            // =================================================
+            // HEADER
+            // =================================================
+
+            if ("header".equals(
                     prayerRow.type
-            );
+            )) {
 
-            item.put(
-                    "title",
-                    prayerRow.title == null
-                            ? ""
-                            : prayerRow.title
-            );
+                item.put(
+                        "type",
+                        "header"
+                );
 
-            item.put(
-                    "content",
-                    prayerRow.content == null
-                            ? ""
-                            : prayerRow.content
-            );
+                item.put(
+                        "text",
+                        prayerRow.text == null
+                                ? ""
+                                : prayerRow.text
+                );
 
-            bundlePrayerData.add(
+            }
+
+            // =================================================
+            // NORMAL
+            // =================================================
+
+            else {
+
+                item.put(
+                        "type",
+                        "normal"
+                );
+
+                item.put(
+                        "title",
+                        prayerRow.title == null
+                                ? ""
+                                : prayerRow.title
+                );
+
+                item.put(
+                        "content",
+                        prayerRow.content == null
+                                ? ""
+                                : prayerRow.content
+                );
+            }
+
+            bundleOpeningHours.add(
                     item
             );
         }
 
-        // -----------------------------------------------------
-        // Save
-        // -----------------------------------------------------
+        // =====================================================
+        // Save under openingHours
+        // =====================================================
+
+        data.putSerializable(
+                "openingHours",
+                bundleOpeningHours
+        );
+
+        // =====================================================
+        // Keep prayerData for compatibility
+        //
+        // Other screens can still access it.
+        // =====================================================
 
         data.putSerializable(
                 "prayerData",
-                bundlePrayerData
+                bundleOpeningHours
         );
 
         data.putBoolean(
@@ -1050,9 +1289,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 true
         );
 
-        // -----------------------------------------------------
-        // Next fragment
-        // -----------------------------------------------------
+        // =====================================================
+        // Next Fragment
+        // =====================================================
 
         AddSynagogue05FeaturesFragment nextFragment =
                 new AddSynagogue05FeaturesFragment();
@@ -1107,9 +1346,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                             i
                     );
 
-            // -------------------------------------------------
-            // Title
-            // -------------------------------------------------
+            // =================================================
+            // Title / Header Text
+            // =================================================
 
             if (row.getChildCount() >= 2) {
 
@@ -1118,17 +1357,30 @@ public class AddSynagogue04PrayerFragment extends Fragment {
 
                 if (titleView instanceof EditText) {
 
-                    model.title =
+                    String value =
                             ((EditText) titleView)
                                     .getText()
                                     .toString()
                                     .trim();
+
+                    if ("header".equals(
+                            model.type
+                    )) {
+
+                        model.text =
+                                value;
+
+                    } else {
+
+                        model.title =
+                                value;
+                    }
                 }
             }
 
-            // -------------------------------------------------
+            // =================================================
             // Content / Time
-            // -------------------------------------------------
+            // =================================================
 
             if ("normal".equals(
                     model.type
@@ -1179,9 +1431,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 R.id.progressLine5
         };
 
-        // -----------------------------------------------------
+        // =====================================================
         // Steps
-        // -----------------------------------------------------
+        // =====================================================
 
         for (int i = 0;
              i < stepIds.length;
@@ -1251,9 +1503,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             }
         }
 
-        // -----------------------------------------------------
+        // =====================================================
         // Lines
-        // -----------------------------------------------------
+        // =====================================================
 
         for (int i = 0;
              i < lineIds.length;
@@ -1290,9 +1542,9 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             }
         }
 
-        // -----------------------------------------------------
-        // Step text
-        // -----------------------------------------------------
+        // =====================================================
+        // Step Text
+        // =====================================================
 
         TextView stepText =
                 view.findViewById(

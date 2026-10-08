@@ -161,40 +161,28 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         // Back
         // -----------------------------------------------------
 
-        if (buttonBack != null) {
-
-            buttonBack.setOnClickListener(
-                    v -> {
-
+        buttonBack.setOnClickListener(
+                v ->
                         requireActivity()
                                 .getSupportFragmentManager()
-                                .popBackStack();
-                    }
-            );
-        }
+                                .popBackStack()
+        );
 
         // -----------------------------------------------------
         // Save
         // -----------------------------------------------------
 
-        if (buttonSave != null) {
-
-            buttonSave.setOnClickListener(
-                    v ->
-                            saveSynagogue()
-            );
-        }
+        buttonSave.setOnClickListener(
+                v ->
+                        saveSynagogue()
+        );
     }
 
     // =========================================================
-    // Show Summary
+    // Summary
     // =========================================================
 
     private void showSummary() {
-
-        if (summaryText == null) {
-            return;
-        }
 
         Bundle data =
                 getArguments();
@@ -205,9 +193,7 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                     "לא נמצאו נתונים להרשמה."
             );
 
-            if (buttonSave != null) {
-                buttonSave.setEnabled(false);
-            }
+            buttonSave.setEnabled(false);
 
             return;
         }
@@ -220,27 +206,27 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         // =====================================================
 
         String name =
-                getStringValue(
-                        data,
-                        "synagogueName"
+                data.getString(
+                        "synagogueName",
+                        ""
                 );
 
         String description =
-                getStringValue(
-                        data,
-                        "synagogueDescription"
+                data.getString(
+                        "synagogueDescription",
+                        ""
                 );
 
         String address =
-                getStringValue(
-                        data,
-                        "synagogueAddress"
+                data.getString(
+                        "synagogueAddress",
+                        ""
                 );
 
         String phone =
-                getStringValue(
-                        data,
-                        "synagoguePhone"
+                data.getString(
+                        "synagoguePhone",
+                        ""
                 );
 
         double latitude =
@@ -259,40 +245,64 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         // Name
         // =====================================================
 
-        appendSection(
-                summary,
-                "שם בית הכנסת",
+        summary.append(
+                "שם בית הכנסת\n"
+        );
+
+        summary.append(
                 emptyOrValue(name)
+        );
+
+        summary.append(
+                "\n\n"
         );
 
         // =====================================================
         // Description
         // =====================================================
 
-        appendSection(
-                summary,
-                "תיאור",
+        summary.append(
+                "תיאור\n"
+        );
+
+        summary.append(
                 emptyOrValue(description)
+        );
+
+        summary.append(
+                "\n\n"
         );
 
         // =====================================================
         // Address
         // =====================================================
 
-        appendSection(
-                summary,
-                "כתובת",
+        summary.append(
+                "כתובת\n"
+        );
+
+        summary.append(
                 emptyOrValue(address)
+        );
+
+        summary.append(
+                "\n\n"
         );
 
         // =====================================================
         // Phone
         // =====================================================
 
-        appendSection(
-                summary,
-                "טלפון",
+        summary.append(
+                "טלפון\n"
+        );
+
+        summary.append(
                 emptyOrValue(phone)
+        );
+
+        summary.append(
+                "\n\n"
         );
 
         // =====================================================
@@ -329,14 +339,21 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         );
 
         // =====================================================
-        // Prayers
+        // Opening Hours / Prayers
+        //
+        // IMPORTANT:
+        //
+        // Firebase field:
+        //
+        // openingHours
+        //
         // =====================================================
 
         summary.append(
-                "תפילות\n"
+                "זמני תפילות\n"
         );
 
-        appendPrayerSummary(
+        appendOpeningHoursSummary(
                 summary,
                 data
         );
@@ -359,63 +376,12 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         );
 
         // =====================================================
-        // Set Text
+        // Display
         // =====================================================
 
         summaryText.setText(
-                summary.toString().trim()
+                summary.toString()
         );
-    }
-
-    // =========================================================
-    // Append Section
-    // =========================================================
-
-    private void appendSection(
-            StringBuilder summary,
-            String title,
-            String value) {
-
-        summary.append(
-                title
-        );
-
-        summary.append(
-                "\n"
-        );
-
-        summary.append(
-                value
-        );
-
-        summary.append(
-                "\n\n"
-        );
-    }
-
-    // =========================================================
-    // Get String From Bundle
-    // =========================================================
-
-    private String getStringValue(
-            Bundle data,
-            String key) {
-
-        if (data == null) {
-            return "";
-        }
-
-        String value =
-                data.getString(
-                        key,
-                        ""
-                );
-
-        if (value == null) {
-            return "";
-        }
-
-        return value.trim();
     }
 
     // =========================================================
@@ -433,49 +399,58 @@ public class AddSynagogue06SummaryFragment extends Fragment {
     }
 
     // =========================================================
-    // Prayer Summary
+    // Opening Hours Summary
     //
-    // Expected structure:
+    // Reads:
     //
-    // prayerData
-    //     ArrayList<HashMap<String,String>>
+    // openingHours
     //
-    // Each row:
+    // Each item:
     //
-    // type
-    // title
-    // content
+    // Header:
+    // type = header
+    // text = "תפילות יום חול"
     //
-    // type:
-    // normal
-    // header
+    // Normal:
+    // type = normal
+    // title = "שחרית"
+    // content = "05:45"
+    //
     // =========================================================
 
-    private void appendPrayerSummary(
+    private void appendOpeningHoursSummary(
             StringBuilder summary,
             Bundle data) {
 
-        Object prayerObject =
+        Object openingHoursObject =
                 data.getSerializable(
-                        "prayerData"
+                        "openingHours"
                 );
 
-        if (!(prayerObject instanceof ArrayList)) {
+        // -----------------------------------------------------
+        // No data
+        // -----------------------------------------------------
+
+        if (!(openingHoursObject instanceof ArrayList)) {
 
             summary.append(
-                    "לא הוגדרו תפילות\n"
+                    "שעות הפתיחה לא הוגדרו.\n"
             );
 
             return;
         }
 
         ArrayList<?> rows =
-                (ArrayList<?>) prayerObject;
+                (ArrayList<?>) openingHoursObject;
+
+        // -----------------------------------------------------
+        // Empty
+        // -----------------------------------------------------
 
         if (rows.isEmpty()) {
 
             summary.append(
-                    "לא הוגדרו תפילות\n"
+                    "שעות הפתיחה לא הוגדרו.\n"
             );
 
             return;
@@ -484,8 +459,16 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         boolean foundAny =
                 false;
 
+        // =====================================================
+        // Rows
+        // =====================================================
+
         for (Object rowObject :
                 rows) {
+
+            // -------------------------------------------------
+            // Must be Map
+            // -------------------------------------------------
 
             if (!(rowObject instanceof Map)) {
                 continue;
@@ -494,31 +477,36 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             Map<?, ?> row =
                     (Map<?, ?>) rowObject;
 
+            // -------------------------------------------------
+            // Type
+            // -------------------------------------------------
+
             String type =
                     valueFromMap(
                             row,
                             "type"
                     );
 
-            String title =
-                    valueFromMap(
-                            row,
-                            "title"
-                    );
-
-            String content =
-                    valueFromMap(
-                            row,
-                            "content"
-                    );
-
             // =================================================
-            // Header
+            // HEADER
+            //
+            // Firebase:
+            //
+            // {
+            //     type: "header",
+            //     text: "תפילות יום חול"
+            // }
             // =================================================
 
             if ("header".equalsIgnoreCase(type)) {
 
-                if (TextUtils.isEmpty(title)) {
+                String text =
+                        valueFromMap(
+                                row,
+                                "text"
+                        );
+
+                if (TextUtils.isEmpty(text)) {
                     continue;
                 }
 
@@ -534,69 +522,107 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                 );
 
                 summary.append(
-                        title
+                        text
                 );
 
                 summary.append(
                         "\n"
                 );
 
-                foundAny =
-                        true;
+                foundAny = true;
 
                 continue;
             }
 
             // =================================================
-            // Normal Prayer
+            // NORMAL
+            //
+            // Firebase:
+            //
+            // {
+            //     type: "normal",
+            //     title: "שחרית",
+            //     content: "05:45"
+            // }
             // =================================================
 
-            if (TextUtils.isEmpty(title)
-                    && TextUtils.isEmpty(content)) {
+            if ("normal".equalsIgnoreCase(type)
+                    || TextUtils.isEmpty(type)) {
 
-                continue;
-            }
+                String title =
+                        valueFromMap(
+                                row,
+                                "title"
+                        );
 
-            if (foundAny) {
+                String content =
+                        valueFromMap(
+                                row,
+                                "content"
+                        );
 
-                summary.append(
-                        "\n"
-                );
-            }
+                // ---------------------------------------------
+                // Skip completely empty row
+                // ---------------------------------------------
 
-            if (!TextUtils.isEmpty(title)) {
+                if (TextUtils.isEmpty(title)
+                        && TextUtils.isEmpty(content)) {
 
-                summary.append(
-                        title
-                );
-            }
+                    continue;
+                }
 
-            if (!TextUtils.isEmpty(content)) {
+                if (foundAny) {
+
+                    summary.append(
+                            "\n"
+                    );
+                }
+
+                // ---------------------------------------------
+                // Prayer title
+                // ---------------------------------------------
 
                 if (!TextUtils.isEmpty(title)) {
 
                     summary.append(
-                            ": "
+                            title
+                    );
+                }
+
+                // ---------------------------------------------
+                // Time
+                // ---------------------------------------------
+
+                if (!TextUtils.isEmpty(content)) {
+
+                    if (!TextUtils.isEmpty(title)) {
+
+                        summary.append(
+                                ": "
+                        );
+                    }
+
+                    summary.append(
+                            content
                     );
                 }
 
                 summary.append(
-                        content
+                        "\n"
                 );
+
+                foundAny = true;
             }
-
-            summary.append(
-                    "\n"
-            );
-
-            foundAny =
-                    true;
         }
+
+        // =====================================================
+        // Nothing found
+        // =====================================================
 
         if (!foundAny) {
 
             summary.append(
-                    "לא הוגדרו תפילות\n"
+                    "שעות הפתיחה לא הוגדרו.\n"
             );
         }
     }
@@ -609,14 +635,8 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             Map<?, ?> map,
             String key) {
 
-        if (map == null) {
-            return "";
-        }
-
         Object value =
-                map.get(
-                        key
-                );
+                map.get(key);
 
         if (value == null) {
             return "";
@@ -713,25 +733,16 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                 "אבטחה"
         );
 
-        boolean foundAny =
-                false;
-
         for (String key :
                 selected) {
-
-            if (TextUtils.isEmpty(key)) {
-                continue;
-            }
 
             String name =
                     names.get(
                             key
                     );
 
-            if (TextUtils.isEmpty(name)) {
-
-                name =
-                        key;
+            if (name == null) {
+                name = key;
             }
 
             summary.append(
@@ -745,16 +756,6 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             summary.append(
                     "\n"
             );
-
-            foundAny =
-                    true;
-        }
-
-        if (!foundAny) {
-
-            summary.append(
-                    "לא נבחרו מאפיינים\n"
-            );
         }
     }
 
@@ -767,52 +768,60 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         Bundle data =
                 getArguments();
 
+        // -----------------------------------------------------
+        // Data validation
+        // -----------------------------------------------------
+
         if (data == null) {
 
             showError(
-                    "לא נמצאו נתוני הרשמה."
+                    "לא נמצאו נתוני הרשמה"
             );
 
             return;
         }
 
-        // =====================================================
-        // Required Fields
-        // =====================================================
+        // -----------------------------------------------------
+        // Name
+        // -----------------------------------------------------
 
         String name =
-                getStringValue(
-                        data,
-                        "synagogueName"
-                );
-
-        String address =
-                getStringValue(
-                        data,
-                        "synagogueAddress"
-                );
+                data.getString(
+                        "synagogueName",
+                        ""
+                ).trim();
 
         if (TextUtils.isEmpty(name)) {
 
             showError(
-                    "חסר שם בית הכנסת."
+                    "חסר שם בית הכנסת"
             );
 
             return;
         }
+
+        // -----------------------------------------------------
+        // Address
+        // -----------------------------------------------------
+
+        String address =
+                data.getString(
+                        "synagogueAddress",
+                        ""
+                ).trim();
 
         if (TextUtils.isEmpty(address)) {
 
             showError(
-                    "חסרה כתובת."
+                    "חסרה כתובת"
             );
 
             return;
         }
 
-        // =====================================================
-        // Firebase User
-        // =====================================================
+        // -----------------------------------------------------
+        // Firebase user
+        // -----------------------------------------------------
 
         FirebaseUser currentUser =
                 auth.getCurrentUser();
@@ -826,9 +835,9 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             return;
         }
 
-        // =====================================================
-        // Email Verification
-        // =====================================================
+        // -----------------------------------------------------
+        // Email verification
+        // -----------------------------------------------------
 
         if (!currentUser.isEmailVerified()) {
 
@@ -839,57 +848,21 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             return;
         }
 
-        // =====================================================
-        // Disable Buttons
-        // =====================================================
+        // -----------------------------------------------------
+        // Disable buttons
+        // -----------------------------------------------------
 
-        setSavingState(
-                true
-        );
+        buttonSave.setEnabled(false);
+        buttonBack.setEnabled(false);
 
-        // =====================================================
+        // -----------------------------------------------------
         // Save
-        // =====================================================
+        // -----------------------------------------------------
 
         saveToFirestore(
                 currentUser.getUid(),
                 data
         );
-    }
-
-    // =========================================================
-    // Saving State
-    // =========================================================
-
-    private void setSavingState(
-            boolean saving) {
-
-        if (buttonSave != null) {
-
-            buttonSave.setEnabled(
-                    !saving
-            );
-
-            if (saving) {
-
-                buttonSave.setText(
-                        "שומר..."
-                );
-
-            } else {
-
-                buttonSave.setText(
-                        "שמור"
-                );
-            }
-        }
-
-        if (buttonBack != null) {
-
-            buttonBack.setEnabled(
-                    !saving
-            );
-        }
     }
 
     // =========================================================
@@ -917,7 +890,7 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                 && currentUser.getEmail() != null) {
 
             email =
-                    currentUser.getEmail().trim();
+                    currentUser.getEmail();
         }
 
         // =====================================================
@@ -940,33 +913,33 @@ public class AddSynagogue06SummaryFragment extends Fragment {
 
         synagogue.put(
                 "name",
-                getStringValue(
-                        data,
-                        "synagogueName"
+                data.getString(
+                        "synagogueName",
+                        ""
                 )
         );
 
         synagogue.put(
                 "address",
-                getStringValue(
-                        data,
-                        "synagogueAddress"
+                data.getString(
+                        "synagogueAddress",
+                        ""
                 )
         );
 
         synagogue.put(
                 "phone",
-                getStringValue(
-                        data,
-                        "synagoguePhone"
+                data.getString(
+                        "synagoguePhone",
+                        ""
                 )
         );
 
         synagogue.put(
                 "description",
-                getStringValue(
-                        data,
-                        "synagogueDescription"
+                data.getString(
+                        "synagogueDescription",
+                        ""
                 )
         );
 
@@ -991,25 +964,32 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         );
 
         // =====================================================
-        // Prayers
+        // OPENING HOURS
+        //
+        // IMPORTANT:
+        //
+        // The Firestore field is:
+        //
+        // openingHours
+        //
+        // NOT:
+        //
+        // prayers
+        //
         // =====================================================
 
         synagogue.put(
-                "prayers",
-                buildPrayerData(
-                        data
-                )
+                "openingHours",
+                buildOpeningHours(data)
         );
 
         // =====================================================
-        // Features
+        // FEATURES
         // =====================================================
 
         synagogue.put(
                 "features",
-                buildFeatures(
-                        data
-                )
+                buildFeatures(data)
         );
 
         // =====================================================
@@ -1042,18 +1022,10 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         db.collection(
                         "synagogues_v2"
                 )
-                .document(
-                        uid
-                )
-                .set(
-                        synagogue
-                )
+                .document(uid)
+                .set(synagogue)
                 .addOnSuccessListener(
                         unused -> {
-
-                            if (!isAdded()) {
-                                return;
-                            }
 
                             Toast.makeText(
                                     requireContext(),
@@ -1067,66 +1039,96 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                 .addOnFailureListener(
                         e -> {
 
-                            if (!isAdded()) {
-                                return;
-                            }
+                            buttonSave.setEnabled(true);
+                            buttonBack.setEnabled(true);
 
-                            setSavingState(
-                                    false
-                            );
-
-                            String error =
+                            String message =
                                     e.getMessage();
 
-                            if (TextUtils.isEmpty(error)) {
+                            if (TextUtils.isEmpty(message)) {
 
-                                error =
+                                message =
                                         "שגיאה לא ידועה";
                             }
 
                             showError(
                                     "שמירת בית הכנסת נכשלה:\n"
-                                            + error
+                                            + message
                             );
                         }
                 );
     }
 
     // =========================================================
-    // Build Prayer Data
+    // Build Opening Hours
     //
-    // Input:
+    // Converts the registration Bundle data into the exact
+    // Firestore structure:
     //
-    // ArrayList<HashMap<String,String>>
+    // openingHours
     //
-    // Output:
+    // [
+    //   {
+    //      type: "header",
+    //      text: "תפילות יום חול"
+    //   },
+    //   {
+    //      type: "normal",
+    //      title: "שחרית",
+    //      content: "05:45"
+    //   }
+    // ]
     //
-    // ArrayList<Map<String,Object>>
-    //
-    // Firestore compatible.
     // =========================================================
 
-    private ArrayList<Map<String, Object>> buildPrayerData(
+    private ArrayList<Map<String, Object>> buildOpeningHours(
             Bundle data) {
 
         ArrayList<Map<String, Object>> result =
                 new ArrayList<>();
 
-        if (data == null) {
-            return result;
-        }
+        // -----------------------------------------------------
+        // Read from Bundle
+        // -----------------------------------------------------
 
-        Object prayerObject =
+        Object openingHoursObject =
                 data.getSerializable(
-                        "prayerData"
+                        "openingHours"
                 );
 
-        if (!(prayerObject instanceof ArrayList)) {
+        // -----------------------------------------------------
+        // IMPORTANT BACKWARD COMPATIBILITY
+        //
+        // If the previous fragment still sends
+        // "prayerData", we can read it as fallback.
+        //
+        // This prevents the summary from breaking while
+        // transitioning the previous fragment.
+        // -----------------------------------------------------
+
+        if (!(openingHoursObject instanceof ArrayList)) {
+
+            openingHoursObject =
+                    data.getSerializable(
+                            "prayerData"
+                    );
+        }
+
+        // -----------------------------------------------------
+        // Validate
+        // -----------------------------------------------------
+
+        if (!(openingHoursObject instanceof ArrayList)) {
+
             return result;
         }
 
         ArrayList<?> originalRows =
-                (ArrayList<?>) prayerObject;
+                (ArrayList<?>) openingHoursObject;
+
+        // =====================================================
+        // Convert each row
+        // =====================================================
 
         for (Object rowObject :
                 originalRows) {
@@ -1138,11 +1140,86 @@ public class AddSynagogue06SummaryFragment extends Fragment {
             Map<?, ?> originalRow =
                     (Map<?, ?>) rowObject;
 
+            Map<String, Object> row =
+                    new HashMap<>();
+
+            // -------------------------------------------------
+            // Type
+            // -------------------------------------------------
+
             String type =
                     valueFromMap(
                             originalRow,
                             "type"
                     );
+
+            // =================================================
+            // HEADER
+            //
+            // Exact Firestore structure:
+            //
+            // type = header
+            // text = ...
+            // =================================================
+
+            if ("header".equalsIgnoreCase(type)) {
+
+                String text =
+                        valueFromMap(
+                                originalRow,
+                                "text"
+                        );
+
+                // ---------------------------------------------
+                // Backward compatibility:
+                //
+                // Old structure may have stored the header
+                // text in "title".
+                // ---------------------------------------------
+
+                if (TextUtils.isEmpty(text)) {
+
+                    text =
+                            valueFromMap(
+                                    originalRow,
+                                    "title"
+                            );
+                }
+
+                // ---------------------------------------------
+                // Skip empty header
+                // ---------------------------------------------
+
+                if (TextUtils.isEmpty(text)) {
+                    continue;
+                }
+
+                row.put(
+                        "type",
+                        "header"
+                );
+
+                row.put(
+                        "text",
+                        text
+                );
+
+                result.add(
+                        row
+                );
+
+                continue;
+            }
+
+            // =================================================
+            // NORMAL
+            //
+            // Exact Firestore structure:
+            //
+            // type = normal
+            // title = ...
+            // content = ...
+            // =================================================
 
             String title =
                     valueFromMap(
@@ -1157,33 +1234,18 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                     );
 
             // -------------------------------------------------
-            // Ignore completely empty rows
+            // Skip completely empty row
             // -------------------------------------------------
 
-            if (TextUtils.isEmpty(type)
-                    && TextUtils.isEmpty(title)
+            if (TextUtils.isEmpty(title)
                     && TextUtils.isEmpty(content)) {
 
                 continue;
             }
 
-            // -------------------------------------------------
-            // Normalize type
-            // -------------------------------------------------
-
-            if (!"header".equalsIgnoreCase(type)
-                    && !"normal".equalsIgnoreCase(type)) {
-
-                type =
-                        "normal";
-            }
-
-            Map<String, Object> row =
-                    new HashMap<>();
-
             row.put(
                     "type",
-                    type
+                    "normal"
             );
 
             row.put(
@@ -1206,8 +1268,6 @@ public class AddSynagogue06SummaryFragment extends Fragment {
 
     // =========================================================
     // Build Features
-    //
-    // Saves ALL known feature keys as true/false.
     // =========================================================
 
     private Map<String, Boolean> buildFeatures(
@@ -1240,15 +1300,10 @@ public class AddSynagogue06SummaryFragment extends Fragment {
         for (String key :
                 keys) {
 
-            boolean enabled =
-                    selected != null
-                            && selected.contains(
-                            key
-                    );
-
             result.put(
                     key,
-                    enabled
+                    selected != null
+                            && selected.contains(key)
             );
         }
 
@@ -1260,10 +1315,6 @@ public class AddSynagogue06SummaryFragment extends Fragment {
     // =========================================================
 
     private void finishRegistration() {
-
-        if (!isAdded()) {
-            return;
-        }
 
         requireActivity()
                 .getSupportFragmentManager()
@@ -1280,10 +1331,6 @@ public class AddSynagogue06SummaryFragment extends Fragment {
 
     private void showError(
             String message) {
-
-        if (!isAdded()) {
-            return;
-        }
 
         Toast.makeText(
                 requireContext(),
@@ -1357,11 +1404,13 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                         R.drawable.bg_progress_completed
                 );
 
-                // -------------------------------------------------
-                // Active
-                // -------------------------------------------------
+            }
 
-            } else if (stepNumber == currentStep) {
+            // -------------------------------------------------
+            // Active
+            // -------------------------------------------------
+
+            else if (stepNumber == currentStep) {
 
                 step.setText(
                         String.valueOf(
@@ -1377,11 +1426,13 @@ public class AddSynagogue06SummaryFragment extends Fragment {
                         R.drawable.bg_progress_active
                 );
 
-                // -------------------------------------------------
-                // Inactive
-                // -------------------------------------------------
+            }
 
-            } else {
+            // -------------------------------------------------
+            // Inactive
+            // -------------------------------------------------
+
+            else {
 
                 step.setText(
                         String.valueOf(
