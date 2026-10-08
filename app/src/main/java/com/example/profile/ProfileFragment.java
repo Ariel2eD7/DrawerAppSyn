@@ -49,7 +49,6 @@ public class ProfileFragment extends Fragment {
     // =========================================================
 
     private EditText noticeInput;
-    private EditText lessonsInput;
 
     private EditText nameInput;
     private EditText addressInput;
@@ -179,10 +178,7 @@ public class ProfileFragment extends Fragment {
                         R.id.profileNoticeInput
                 );
 
-        lessonsInput =
-                view.findViewById(
-                        R.id.profileLessonsInput
-                );
+
 
         nameInput =
                 view.findViewById(
@@ -362,12 +358,6 @@ public class ProfileFragment extends Fragment {
                 )
         );
 
-        lessonsInput.setText(
-                valueOrDefault(
-                        document.getString("lessons"),
-                        ""
-                )
-        );
 
         String status =
                 document.getString("status");
@@ -1424,12 +1414,7 @@ public class ProfileFragment extends Fragment {
                         .trim()
         );
 
-        updates.put(
-                "lessons",
-                lessonsInput.getText()
-                        .toString()
-                        .trim()
-        );
+
 
         // -----------------------------------------------------
         // New modular opening hours

@@ -600,7 +600,7 @@ public class SynagogueDetailsFragment extends Fragment
         spacer.setLayoutParams(
                 new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
-                        dp(10)
+                        dp(5)
                 )
         );
 
@@ -624,14 +624,14 @@ public class SynagogueDetailsFragment extends Fragment
 
         LinearLayout.LayoutParams lineParams =
                 new LinearLayout.LayoutParams(
-                        dp(5),
-                        dp(36)
+                        dp(4),
+                        dp(24)
                 );
 
         lineParams.setMargins(
                 0,
                 0,
-                dp(12),
+                dp(8),
                 0
         );
 
@@ -649,7 +649,7 @@ public class SynagogueDetailsFragment extends Fragment
                 textValue.trim()
         );
 
-        title.setTextSize(18);
+        title.setTextSize(15);
 
         title.setTextColor(
                 Color.rgb(
@@ -771,6 +771,7 @@ public class SynagogueDetailsFragment extends Fragment
     // Header Background
     // =============================================================
 
+
     private LinearLayout createHeaderRow() {
 
         LinearLayout row =
@@ -787,10 +788,10 @@ public class SynagogueDetailsFragment extends Fragment
         );
 
         row.setPadding(
-                dp(16),
-                dp(14),
-                dp(16),
-                dp(14)
+                dp(12),
+                dp(7),
+                dp(12),
+                dp(7)
         );
 
         row.setLayoutDirection(
@@ -809,7 +810,7 @@ public class SynagogueDetailsFragment extends Fragment
         );
 
         background.setCornerRadius(
-                dp(16)
+                dp(12)
         );
 
         background.setStroke(
@@ -835,7 +836,7 @@ public class SynagogueDetailsFragment extends Fragment
                 0,
                 0,
                 0,
-                dp(8)
+                dp(5)
         );
 
         row.setLayoutParams(params);

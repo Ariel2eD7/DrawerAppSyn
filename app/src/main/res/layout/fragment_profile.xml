@@ -225,7 +225,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
 
-                    android:text="🕐  זמני תפילות ופעילויות"
+                    android:text="תוכן בית הכנסת"
 
                     android:textSize="22sp"
                     android:textStyle="bold"
@@ -238,7 +238,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
 
-                    android:text="בנו את הרשימה בדיוק כפי שתרצו שהמתפללים יראו אותה"
+                    android:text="סדרו את התפילות, השיעורים והאירועים כפי שתרצו שיופיעו למתפללים"
 
                     android:textSize="13sp"
                     android:textColor="#68737D"
@@ -248,19 +248,7 @@
 
 
 
-                <!-- ================================================= -->
-                <!-- Dynamic List -->
-                <!-- ================================================= -->
 
-                <LinearLayout
-                    android:id="@+id/profileOpeningHoursContainer"
-
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-
-                    android:orientation="vertical"
-
-                    android:layoutDirection="rtl" />
 
 
                 <!-- ================================================= -->
@@ -375,88 +363,6 @@
         </com.google.android.material.card.MaterialCardView>
 
 
-        <!-- ================================================= -->
-        <!-- Lessons -->
-        <!-- ================================================= -->
-
-        <com.google.android.material.card.MaterialCardView
-
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-
-            android:layout_marginBottom="16dp"
-
-            app:cardBackgroundColor="@android:color/white"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-
-                    android:text="📚  שיעורים ואירועים"
-
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-
-                    android:textColor="@color/primary"
-
-                    android:layout_marginBottom="6dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-
-                    android:text="אפשר לעדכן כאן שיעורים, אירועים ומידע שוטף."
-
-                    android:textSize="13sp"
-                    android:textColor="#68737D"
-
-                    android:layout_marginBottom="12dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-
-                    android:hint="לדוגמה:
-דף יומי — 19:30
-שיעור הלכה — 20:15
-שיעור פרשת שבוע — מוצאי שבת"
-
-                    app:boxBackgroundMode="outline"
-
-                    app:boxCornerRadiusTopStart="14dp"
-                    app:boxCornerRadiusTopEnd="14dp"
-                    app:boxCornerRadiusBottomStart="14dp"
-                    app:boxCornerRadiusBottomEnd="14dp">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/profileLessonsInput"
-
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-
-                        android:minLines="4"
-                        android:maxLines="10"
-
-                        android:gravity="top|start"
-
-                        android:textSize="15sp" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
 
 
         <!-- ================================================= -->
