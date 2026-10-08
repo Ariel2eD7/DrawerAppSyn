@@ -1,12 +1,14 @@
 package com.example.register;
 
-import android.app.TimePickerDialog;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -14,78 +16,69 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.drawerappsyn.MainActivity;
 import com.example.drawerappsyn.R;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import com.example.drawerappsyn.MainActivity;
 
 public class AddSynagogue04PrayerFragment extends Fragment {
 
+    // =========================================================
+    // Main
+    // =========================================================
+
     private LinearLayout prayerContainer;
-    private TextView selectedDayTitle;
 
-    private final String[] dayKeys = {
-            "sunday",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "shabbat"
-    };
+    // =========================================================
+    // Prayer Data
+    //
+    // A single list of rows.
+    //
+    // Each row:
+    //
+    // type    = normal / header
+    // title   = prayer name / header
+    // content = time
+    //
+    // =========================================================
 
-    private final String[] dayNames = {
-            "ראשון",
-            "שני",
-            "שלישי",
-            "רביעי",
-            "חמישי",
-            "שישי",
-            "שבת"
-    };
+    private final ArrayList<PrayerRow> prayerData =
+            new ArrayList<>();
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        MainActivity activity =
-                (MainActivity) requireActivity();
-
-        activity.setToolbarVisible(false);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        MainActivity activity =
-                (MainActivity) requireActivity();
-
-        activity.setToolbarVisible(true);
-    }
-
-    private int selectedDay = 0;
-
-    /*
-     * מבנה זמני של שעות התפילה.
-     *
-     * day -> prayer -> list of times
-     *
-     * לדוגמה:
-     * sunday -> shacharit -> ["07:00", "08:30"]
-     */
-    private final Map<String, Map<String, ArrayList<String>>> prayerData =
-            new HashMap<>();
+    // =========================================================
+    // Constructor
+    // =========================================================
 
     public AddSynagogue04PrayerFragment() {
         // Required empty public constructor
     }
+
+    // =========================================================
+    // Prayer Row Model
+    // =========================================================
+
+    private static class PrayerRow {
+
+        String type;
+        String title;
+        String content;
+
+        PrayerRow(
+                String type,
+                String title,
+                String content) {
+
+            this.type = type;
+            this.title = title;
+            this.content = content;
+        }
+    }
+
+    // =========================================================
+    // Create View
+    // =========================================================
 
     @Nullable
     @Override
@@ -101,237 +94,536 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         );
     }
 
+    // =========================================================
+    // View Created
+    // =========================================================
+
     @Override
     public void onViewCreated(
             @NonNull View view,
             @Nullable Bundle savedInstanceState) {
 
-        super.onViewCreated(view, savedInstanceState);
+        super.onViewCreated(
+                view,
+                savedInstanceState
+        );
 
-        setupProgress(view, 4);
+        setupProgress(
+                view,
+                4
+        );
 
-        prayerContainer = view.findViewById(R.id.prayerContainer);
-        selectedDayTitle = view.findViewById(R.id.selectedDayTitle);
+        prayerContainer =
+                view.findViewById(
+                        R.id.prayerContainer
+                );
 
         MaterialButton buttonBack =
-                view.findViewById(R.id.buttonBack);
+                view.findViewById(
+                        R.id.buttonBack
+                );
 
         MaterialButton buttonNext =
-                view.findViewById(R.id.buttonNext);
+                view.findViewById(
+                        R.id.buttonNext
+                );
 
-        setupPrayerData();
-        setupDayButtons(view);
+        // -----------------------------------------------------
+        // Restore existing data if available
+        // -----------------------------------------------------
 
-        buttonBack.setOnClickListener(v ->
-                requireActivity()
-                        .getSupportFragmentManager()
-                        .popBackStack()
+        restorePrayerData();
+
+        // -----------------------------------------------------
+        // Bottom buttons
+        // -----------------------------------------------------
+
+        setupBottomButtons(
+                view
         );
 
-        buttonNext.setOnClickListener(v ->
-                continueToNextStep()
+        // -----------------------------------------------------
+        // Back
+        // -----------------------------------------------------
+
+        buttonBack.setOnClickListener(
+                v ->
+                        requireActivity()
+                                .getSupportFragmentManager()
+                                .popBackStack()
         );
 
-        showSelectedDay();
+        // -----------------------------------------------------
+        // Next
+        // -----------------------------------------------------
+
+        buttonNext.setOnClickListener(
+                v ->
+                        continueToNextStep()
+        );
+
+        // -----------------------------------------------------
+        // Render existing rows
+        // -----------------------------------------------------
+
+        renderAllRows();
     }
 
-    private void setupPrayerData() {
+    // =========================================================
+    // Restore Prayer Data
+    // =========================================================
 
-        for (String day : dayKeys) {
+    @SuppressWarnings("unchecked")
+    private void restorePrayerData() {
 
-            Map<String, ArrayList<String>> prayers =
-                    new HashMap<>();
+        prayerData.clear();
 
-            prayers.put("shacharit", new ArrayList<>());
-            prayers.put("mincha", new ArrayList<>());
-            prayers.put("maariv", new ArrayList<>());
-            prayers.put("kabbalatShabbat", new ArrayList<>());
-            prayers.put("musaf", new ArrayList<>());
-            prayers.put("havdalah", new ArrayList<>());
+        Bundle arguments = getArguments();
 
-            prayerData.put(day, prayers);
-        }
-    }
-
-    private void setupDayButtons(View view) {
-
-        TextView[] buttons = {
-                view.findViewById(R.id.daySunday),
-                view.findViewById(R.id.dayMonday),
-                view.findViewById(R.id.dayTuesday),
-                view.findViewById(R.id.dayWednesday),
-                view.findViewById(R.id.dayThursday),
-                view.findViewById(R.id.dayFriday),
-                view.findViewById(R.id.dayShabbat)
-        };
-
-        for (int i = 0; i < buttons.length; i++) {
-
-            final int dayIndex = i;
-
-            buttons[i].setOnClickListener(v -> {
-
-                selectedDay = dayIndex;
-
-                updateDaySelection(buttons);
-
-                showSelectedDay();
-            });
+        if (arguments == null) {
+            return;
         }
 
-        updateDaySelection(buttons);
-    }
-
-    private void updateDaySelection(TextView[] buttons) {
-
-        for (int i = 0; i < buttons.length; i++) {
-
-            if (i == selectedDay) {
-
-                buttons[i].setBackgroundResource(
-                        R.drawable.bg_day_selected
+        Object savedObject =
+                arguments.getSerializable(
+                        "prayerData"
                 );
 
-                buttons[i].setTextColor(
-                        getResources().getColor(
-                                android.R.color.white
-                        )
-                );
+        if (!(savedObject instanceof ArrayList)) {
+            return;
+        }
 
-            } else {
+        ArrayList<?> savedRows =
+                (ArrayList<?>) savedObject;
 
-                buttons[i].setBackgroundResource(
-                        R.drawable.bg_day_unselected
-                );
+        for (Object object : savedRows) {
 
-                buttons[i].setTextColor(
-                        getResources().getColor(
-                                R.color.primary
-                        )
-                );
+            if (!(object instanceof HashMap)) {
+                continue;
             }
+
+            HashMap<?, ?> item =
+                    (HashMap<?, ?>) object;
+
+            String type =
+                    item.get("type") instanceof String
+                            ? (String) item.get("type")
+                            : "normal";
+
+            String title =
+                    item.get("title") instanceof String
+                            ? (String) item.get("title")
+                            : "";
+
+            String content =
+                    item.get("content") instanceof String
+                            ? (String) item.get("content")
+                            : "";
+
+            prayerData.add(
+                    new PrayerRow(
+                            type,
+                            title,
+                            content
+                    )
+            );
         }
     }
 
+    // =========================================================
+    // Bottom Buttons
+    // =========================================================
 
+    private void setupBottomButtons(
+            View view) {
 
-    private void showSelectedDay() {
+        MaterialButton addPrayer =
+                view.findViewById(
+                        R.id.buttonAddPrayer
+                );
+
+        MaterialButton addHeader =
+                view.findViewById(
+                        R.id.buttonAddHeader
+                );
+
+        if (addPrayer != null) {
+
+            addPrayer.setOnClickListener(
+                    v ->
+                            addPrayerRow(
+                                    "",
+                                    ""
+                            )
+            );
+        }
+
+        if (addHeader != null) {
+
+            addHeader.setOnClickListener(
+                    v ->
+                            addHeaderRow(
+                                    ""
+                            )
+            );
+        }
+    }
+
+    // =========================================================
+    // Add Prayer Row
+    // =========================================================
+
+    private void addPrayerRow(
+            String titleText,
+            String contentText) {
+
+        PrayerRow model =
+                new PrayerRow(
+                        "normal",
+                        titleText,
+                        contentText
+                );
+
+        prayerData.add(
+                model
+        );
+
+        renderAllRows();
+
+        focusLastRow();
+    }
+
+    // =========================================================
+    // Add Header Row
+    // =========================================================
+
+    private void addHeaderRow(
+            String textValue) {
+
+        PrayerRow model =
+                new PrayerRow(
+                        "header",
+                        textValue,
+                        ""
+                );
+
+        prayerData.add(
+                model
+        );
+
+        renderAllRows();
+
+        focusLastRow();
+    }
+
+    // =========================================================
+    // Render All Rows
+    // =========================================================
+
+    private void renderAllRows() {
+
+        if (prayerContainer == null) {
+            return;
+        }
 
         prayerContainer.removeAllViews();
 
-        String dayKey = dayKeys[selectedDay];
+        for (PrayerRow model : prayerData) {
 
-        selectedDayTitle.setText(
-                "תפילות ביום " + dayNames[selectedDay]
-        );
-
-        addPrayerRow(
-                "shacharit",
-                "שחרית",
-                true
-        );
-
-        addPrayerRow(
-                "mincha",
-                "מנחה",
-                true
-        );
-
-        addPrayerRow(
-                "maariv",
-                "ערבית",
-                true
-        );
-
-        if (selectedDay == 5 || selectedDay == 6) {
-
-            addPrayerRow(
-                    "kabbalatShabbat",
-                    "קבלת שבת",
-                    false
-            );
-
-            addPrayerRow(
-                    "musaf",
-                    "מוסף",
-                    false
-            );
-
-            addPrayerRow(
-                    "havdalah",
-                    "הבדלה",
-                    false
+            renderRow(
+                    model
             );
         }
 
-        // ==========================================
-        // כפתורי הוספת שעה - תמיד מתחת לכל הכרטיסים
-        // ==========================================
+        updateMoveButtons();
+    }
 
-        addBottomAddButton(
-                "shacharit",
-                "שחרית"
+    // =========================================================
+    // Render Row
+    // =========================================================
+
+    private void renderRow(
+            PrayerRow model) {
+
+        LinearLayout row =
+                createBaseRow();
+
+        LinearLayout moves =
+                createMoveButtons();
+
+        EditText title =
+                createEditText(
+                        "תפילה / פעילות",
+                        15
+                );
+
+        title.setText(
+                model.title
         );
 
-        addBottomAddButton(
-                "mincha",
-                "מנחה"
+        title.setLayoutParams(
+                createWeightParams()
         );
 
-        addBottomAddButton(
-                "maariv",
-                "ערבית"
-        );
+        if ("header".equals(
+                model.type
+        )) {
 
-        if (selectedDay == 5 || selectedDay == 6) {
-
-            addBottomAddButton(
-                    "kabbalatShabbat",
-                    "קבלת שבת"
+            title.setHint(
+                    "כותרת / הפרדה"
             );
 
-            addBottomAddButton(
-                    "musaf",
-                    "מוסף"
+            title.setTextSize(
+                    17
             );
 
-            addBottomAddButton(
-                    "havdalah",
-                    "הבדלה"
+            title.setTextColor(
+                    Color.rgb(
+                            40,
+                            40,
+                            40
+                    )
+            );
+
+            title.setTypeface(
+                    Typeface.DEFAULT,
+                    Typeface.BOLD
+            );
+
+            title.setGravity(
+                    Gravity.CENTER
+            );
+        }
+
+        row.addView(
+                moves
+        );
+
+        row.addView(
+                title
+        );
+
+        EditText content = null;
+
+        if ("normal".equals(
+                model.type
+        )) {
+
+            content =
+                    createEditText(
+                            "שעה",
+                            15
+                    );
+
+            content.setText(
+                    model.content
+            );
+
+            content.setLayoutParams(
+                    createWeightParams()
+            );
+
+            row.addView(
+                    content
+            );
+        }
+
+        MaterialButton delete =
+                createButton(
+                        "×",
+                        Color.rgb(
+                                198,
+                                40,
+                                40
+                        ),
+                        22
+                );
+
+        delete.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        dp(42),
+                        dp(48)
+                )
+        );
+
+        row.addView(
+                delete
+        );
+
+        // -----------------------------------------------------
+        // Delete
+        // -----------------------------------------------------
+
+        delete.setOnClickListener(
+                v -> {
+
+                    prayerData.remove(
+                            model
+                    );
+
+                    renderAllRows();
+                }
+        );
+
+        // -----------------------------------------------------
+        // Move Up
+        // -----------------------------------------------------
+
+        moves.getChildAt(0)
+                .setOnClickListener(
+                        v ->
+                                moveRow(
+                                        model,
+                                        -1
+                                )
+                );
+
+        // -----------------------------------------------------
+        // Move Down
+        // -----------------------------------------------------
+
+        moves.getChildAt(1)
+                .setOnClickListener(
+                        v ->
+                                moveRow(
+                                        model,
+                                        1
+                                )
+                );
+
+        // -----------------------------------------------------
+        // Title
+        // -----------------------------------------------------
+
+        title.setOnFocusChangeListener(
+                (v, hasFocus) -> {
+
+                    if (!hasFocus) {
+
+                        model.title =
+                                title.getText()
+                                        .toString()
+                                        .trim();
+                    }
+                }
+        );
+
+        // -----------------------------------------------------
+        // Content
+        // -----------------------------------------------------
+
+        if (content != null) {
+
+            EditText finalContent =
+                    content;
+
+            finalContent.setOnFocusChangeListener(
+                    (v, hasFocus) -> {
+
+                        if (!hasFocus) {
+
+                            model.content =
+                                    finalContent
+                                            .getText()
+                                            .toString()
+                                            .trim();
+                        }
+                    }
+            );
+        }
+
+        prayerContainer.addView(
+                row
+        );
+    }
+
+    // =========================================================
+    // Focus Last Row
+    // =========================================================
+
+    private void focusLastRow() {
+
+        if (prayerContainer == null) {
+            return;
+        }
+
+        int count =
+                prayerContainer.getChildCount();
+
+        if (count == 0) {
+            return;
+        }
+
+        View last =
+                prayerContainer.getChildAt(
+                        count - 1
+                );
+
+        if (!(last instanceof LinearLayout)) {
+            return;
+        }
+
+        LinearLayout row =
+                (LinearLayout) last;
+
+        if (row.getChildCount() < 2) {
+            return;
+        }
+
+        View title =
+                row.getChildAt(1);
+
+        if (title instanceof EditText) {
+
+            title.requestFocus();
+
+            title.post(
+                    () -> {
+
+                        title.requestFocus();
+
+                        if (title instanceof EditText) {
+
+                            EditText editText =
+                                    (EditText) title;
+
+                            editText.setSelection(
+                                    editText.length()
+                            );
+                        }
+                    }
             );
         }
     }
 
+    // =========================================================
+    // Base Row
+    // =========================================================
 
+    private LinearLayout createBaseRow() {
 
-    private void addBottomAddButton(
-            String prayerKey,
-            String prayerName) {
+        LinearLayout row =
+                new LinearLayout(
+                        requireContext()
+                );
 
-        TextView addButton =
-                new TextView(requireContext());
-
-        addButton.setText(
-                "+ הוסף שעה ל" + prayerName
+        row.setOrientation(
+                LinearLayout.HORIZONTAL
         );
 
-        addButton.setTextSize(15);
-
-        addButton.setTextColor(
-                getResources().getColor(
-                        R.color.primary
-                )
+        row.setGravity(
+                Gravity.CENTER_VERTICAL
         );
 
-        addButton.setGravity(
-                android.view.Gravity.CENTER
+        row.setPadding(
+                dp(8),
+                dp(8),
+                dp(8),
+                dp(8)
         );
 
-        addButton.setPadding(
-                12,
-                14,
-                12,
-                14
+        row.setBackground(
+                createRowBackground()
         );
 
         LinearLayout.LayoutParams params =
@@ -344,333 +636,409 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 0,
                 0,
                 0,
-                10
+                dp(10)
         );
 
-        addButton.setLayoutParams(params);
+        row.setLayoutParams(
+                params
+        );
 
-        addButton.setOnClickListener(v -> {
-
-            String dayKey =
-                    dayKeys[selectedDay];
-
-            ArrayList<String> times =
-                    prayerData
-                            .get(dayKey)
-                            .get(prayerKey);
-
-            showTimePicker(
-                    null,
-                    times
-            );
-        });
-
-        prayerContainer.addView(addButton);
+        return row;
     }
 
+    // =========================================================
+    // Background
+    // =========================================================
 
+    private GradientDrawable createRowBackground() {
 
-    private void addPrayerRow(
-            String prayerKey,
-            String prayerName,
-            boolean regularPrayer) {
+        GradientDrawable drawable =
+                new GradientDrawable();
 
-        String dayKey = dayKeys[selectedDay];
-
-        ArrayList<String> times =
-                prayerData
-                        .get(dayKey)
-                        .get(prayerKey);
-
-        MaterialCardView card =
-                new MaterialCardView(requireContext());
-
-        card.setRadius(20);
-        card.setCardElevation(2);
-        card.setUseCompatPadding(true);
-
-        LinearLayout layout =
-                new LinearLayout(requireContext());
-
-        layout.setOrientation(
-                LinearLayout.VERTICAL
+        drawable.setColor(
+                Color.WHITE
         );
 
-        layout.setPadding(
-                20,
-                18,
-                20,
-                18
+        drawable.setCornerRadius(
+                dp(18)
         );
 
-        LinearLayout.LayoutParams cardParams =
-                new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT
+        drawable.setStroke(
+                dp(1),
+                Color.rgb(
+                        225,
+                        229,
+                        234
+                )
+        );
+
+        return drawable;
+    }
+
+    // =========================================================
+    // Move Buttons
+    // =========================================================
+
+    private LinearLayout createMoveButtons() {
+
+        LinearLayout moves =
+                new LinearLayout(
+                        requireContext()
                 );
 
-        cardParams.setMargins(
-                0,
-                0,
-                0,
-                14
-        );
-
-        card.setLayoutParams(cardParams);
-
-        LinearLayout titleRow =
-                new LinearLayout(requireContext());
-
-        titleRow.setOrientation(
+        moves.setOrientation(
                 LinearLayout.HORIZONTAL
         );
 
-        titleRow.setGravity(
-                android.view.Gravity.CENTER_VERTICAL
+        moves.setGravity(
+                Gravity.CENTER
         );
 
-        CheckBox checkBox =
-                new CheckBox(requireContext());
-
-        checkBox.setText(prayerName);
-        checkBox.setTextSize(18);
-        checkBox.setTextColor(
-                getResources().getColor(
-                        android.R.color.black
+        moves.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        dp(92),
+                        dp(48)
                 )
         );
 
-        checkBox.setChecked(
-                !times.isEmpty()
+        MaterialButton up =
+                createButton(
+                        "▲",
+                        Color.DKGRAY,
+                        17
+                );
+
+        MaterialButton down =
+                createButton(
+                        "▼",
+                        Color.DKGRAY,
+                        17
+                );
+
+        up.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        dp(44),
+                        dp(46)
+                )
         );
 
-        titleRow.addView(
-                checkBox,
+        down.setLayoutParams(
+                new LinearLayout.LayoutParams(
+                        dp(44),
+                        dp(46)
+                )
+        );
+
+        moves.addView(
+                up
+        );
+
+        moves.addView(
+                down
+        );
+
+        return moves;
+    }
+
+    // =========================================================
+    // Edit Text
+    // =========================================================
+
+    private EditText createEditText(
+            String hint,
+            float size) {
+
+        EditText editText =
+                new EditText(
+                        requireContext()
+                );
+
+        editText.setHint(
+                hint
+        );
+
+        editText.setTextSize(
+                size
+        );
+
+        editText.setSingleLine(
+                true
+        );
+
+        editText.setPadding(
+                dp(8),
+                0,
+                dp(8),
+                0
+        );
+
+        editText.setTextDirection(
+                View.TEXT_DIRECTION_RTL
+        );
+
+        return editText;
+    }
+
+    // =========================================================
+    // Button
+    // =========================================================
+
+    private MaterialButton createButton(
+            String text,
+            int color,
+            float size) {
+
+        MaterialButton button =
+                new MaterialButton(
+                        requireContext()
+                );
+
+        button.setText(
+                text
+        );
+
+        button.setTextSize(
+                size
+        );
+
+        button.setTextColor(
+                color
+        );
+
+        button.setGravity(
+                Gravity.CENTER
+        );
+
+        button.setPadding(
+                0,
+                0,
+                0,
+                0
+        );
+
+        button.setMinWidth(
+                0
+        );
+
+        button.setMinimumWidth(
+                0
+        );
+
+        button.setMinHeight(
+                0
+        );
+
+        button.setMinimumHeight(
+                0
+        );
+
+        button.setAllCaps(
+                false
+        );
+
+        return button;
+    }
+
+    // =========================================================
+    // Weight Params
+    // =========================================================
+
+    private LinearLayout.LayoutParams createWeightParams() {
+
+        LinearLayout.LayoutParams params =
                 new LinearLayout.LayoutParams(
                         0,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        dp(48),
                         1
-                )
+                );
+
+        params.setMargins(
+                dp(3),
+                0,
+                dp(3),
+                0
         );
 
+        return params;
+    }
 
+    // =========================================================
+    // Move Row
+    // =========================================================
 
+    private void moveRow(
+            PrayerRow model,
+            int direction) {
 
+        int currentIndex =
+                prayerData.indexOf(
+                        model
+                );
 
-
-        layout.addView(titleRow);
-
-        LinearLayout timesContainer =
-                new LinearLayout(requireContext());
-
-        timesContainer.setOrientation(
-                LinearLayout.VERTICAL
-        );
-
-        layout.addView(timesContainer);
-
-        for (String time : times) {
-            addTimeRow(
-                    timesContainer,
-                    times,
-                    time
-            );
+        if (currentIndex < 0) {
+            return;
         }
 
-        checkBox.setOnCheckedChangeListener(
-                (buttonView, isChecked) -> {
+        int newIndex =
+                currentIndex + direction;
 
-                    if (!isChecked) {
+        if (newIndex < 0
+                || newIndex >= prayerData.size()) {
 
-                        times.clear();
-                        timesContainer.removeAllViews();
+            return;
+        }
 
-                    } else if (times.isEmpty()) {
-
-                        showTimePicker(
-                                timesContainer,
-                                times
-                        );
-                    }
-                }
+        prayerData.remove(
+                currentIndex
         );
 
+        prayerData.add(
+                newIndex,
+                model
+        );
 
-
-        card.addView(layout);
-
-        prayerContainer.addView(card);
+        renderAllRows();
     }
 
-    private void showTimePicker(
-            LinearLayout container,
-            ArrayList<String> times) {
+    // =========================================================
+    // Update Move Buttons
+    // =========================================================
 
-        Calendar calendar =
-                Calendar.getInstance();
+    private void updateMoveButtons() {
 
-        int hour =
-                calendar.get(Calendar.HOUR_OF_DAY);
+        if (prayerContainer == null) {
+            return;
+        }
 
-        int minute =
-                calendar.get(Calendar.MINUTE);
+        int count =
+                prayerContainer.getChildCount();
 
-        TimePickerDialog dialog =
-                new TimePickerDialog(
-                        requireContext(),
-                        (view, selectedHour, selectedMinute) -> {
+        for (int i = 0;
+             i < count;
+             i++) {
 
-                            String time =
-                                    String.format(
-                                            Locale.getDefault(),
-                                            "%02d:%02d",
-                                            selectedHour,
-                                            selectedMinute
-                                    );
+            View view =
+                    prayerContainer.getChildAt(
+                            i
+                    );
 
-                            if (!times.contains(time)) {
+            if (!(view instanceof LinearLayout)) {
+                continue;
+            }
 
-                                times.add(time);
+            LinearLayout row =
+                    (LinearLayout) view;
 
-                                showSelectedDay();
-                            }
+            if (row.getChildCount() == 0) {
+                continue;
+            }
 
-                        },
-                        hour,
-                        minute,
-                        true
-                );
+            View first =
+                    row.getChildAt(0);
 
-        dialog.show();
+            if (!(first instanceof LinearLayout)) {
+                continue;
+            }
+
+            LinearLayout moves =
+                    (LinearLayout) first;
+
+            if (moves.getChildCount() < 2) {
+                continue;
+            }
+
+            moves.getChildAt(0)
+                    .setEnabled(
+                            i > 0
+                    );
+
+            moves.getChildAt(1)
+                    .setEnabled(
+                            i < count - 1
+                    );
+        }
     }
 
-    private void addTimeRow(
-            LinearLayout container,
-            ArrayList<String> times,
-            String time) {
-
-        LinearLayout row =
-                new LinearLayout(requireContext());
-
-        row.setOrientation(
-                LinearLayout.HORIZONTAL
-        );
-
-        row.setGravity(
-                android.view.Gravity.CENTER_VERTICAL
-        );
-
-        TextView timeText =
-                new TextView(requireContext());
-
-        timeText.setText("🕐  " + time);
-        timeText.setTextSize(17);
-        timeText.setTextColor(
-                getResources().getColor(
-                        android.R.color.black
-                )
-        );
-
-        row.addView(
-                timeText,
-                new LinearLayout.LayoutParams(
-                        0,
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        1
-                )
-        );
-
-        TextView delete =
-                new TextView(requireContext());
-
-        delete.setText("✕");
-        delete.setTextSize(20);
-        delete.setTextColor(
-                getResources().getColor(
-                        android.R.color.holo_red_dark
-                )
-        );
-
-        delete.setPadding(
-                20,
-                8,
-                8,
-                8
-        );
-
-        row.addView(delete);
-
-        delete.setOnClickListener(v -> {
-
-            times.remove(time);
-
-            showSelectedDay();
-        });
-
-        container.addView(row);
-    }
-
-
-
-
+    // =========================================================
+    // Continue
+    // =========================================================
 
     private void continueToNextStep() {
 
-        /*
-         * לוקחים את הנתונים שהגיעו מהמסכים הקודמים.
-         */
-        Bundle oldData = getArguments();
+        // -----------------------------------------------------
+        // First update current visible fields
+        // -----------------------------------------------------
 
-        /*
-         * יוצרים Bundle חדש כדי לא לשנות ישירות
-         * את ה-Bundle של המסך הקודם.
-         */
+        syncVisibleRows();
+
+        // -----------------------------------------------------
+        // Copy previous Bundle
+        // -----------------------------------------------------
+
+        Bundle oldData =
+                getArguments();
+
         final Bundle data;
 
         if (oldData == null) {
-            data = new Bundle();
+
+            data =
+                    new Bundle();
+
         } else {
-            data = new Bundle(oldData);
+
+            data =
+                    new Bundle(
+                            oldData
+                    );
         }
 
-        /*
-         * ==========================================
-         * שמירת נתוני התפילות
-         * ==========================================
-         *
-         * המבנה:
-         *
-         * day
-         *   -> prayer
-         *       -> list of times
-         */
+        // -----------------------------------------------------
+        // Build prayer data
+        //
+        // list
+        //   -> type
+        //   -> title
+        //   -> content
+        // -----------------------------------------------------
 
-        HashMap<String, HashMap<String, ArrayList<String>>>
+        ArrayList<HashMap<String, String>>
                 bundlePrayerData =
-                new HashMap<>();
+                new ArrayList<>();
 
-        for (Map.Entry<String, Map<String, ArrayList<String>>> dayEntry
-                : prayerData.entrySet()) {
+        for (PrayerRow prayerRow :
+                prayerData) {
 
-            HashMap<String, ArrayList<String>> prayers =
+            HashMap<String, String> item =
                     new HashMap<>();
 
-            for (Map.Entry<String, ArrayList<String>> prayerEntry
-                    : dayEntry.getValue().entrySet()) {
+            item.put(
+                    "type",
+                    prayerRow.type
+            );
 
-                prayers.put(
-                        prayerEntry.getKey(),
-                        new ArrayList<>(
-                                prayerEntry.getValue()
-                        )
-                );
-            }
+            item.put(
+                    "title",
+                    prayerRow.title == null
+                            ? ""
+                            : prayerRow.title
+            );
 
-            bundlePrayerData.put(
-                    dayEntry.getKey(),
-                    prayers
+            item.put(
+                    "content",
+                    prayerRow.content == null
+                            ? ""
+                            : prayerRow.content
+            );
+
+            bundlePrayerData.add(
+                    item
             );
         }
+
+        // -----------------------------------------------------
+        // Save
+        // -----------------------------------------------------
 
         data.putSerializable(
                 "prayerData",
@@ -682,16 +1050,16 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 true
         );
 
-        /*
-         * ==========================================
-         * מעבר למסך המאפיינים
-         * ==========================================
-         */
+        // -----------------------------------------------------
+        // Next fragment
+        // -----------------------------------------------------
 
         AddSynagogue05FeaturesFragment nextFragment =
                 new AddSynagogue05FeaturesFragment();
 
-        nextFragment.setArguments(data);
+        nextFragment.setArguments(
+                data
+        );
 
         requireActivity()
                 .getSupportFragmentManager()
@@ -704,14 +1072,96 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 .commit();
     }
 
+    // =========================================================
+    // Sync Visible Rows
+    // =========================================================
 
+    private void syncVisibleRows() {
 
+        if (prayerContainer == null) {
+            return;
+        }
 
+        int childCount =
+                prayerContainer.getChildCount();
 
-    private void setupProgress(View view, int currentStep)
-    {
+        for (int i = 0;
+             i < childCount
+                     && i < prayerData.size();
+             i++) {
+
+            View view =
+                    prayerContainer.getChildAt(
+                            i
+                    );
+
+            if (!(view instanceof LinearLayout)) {
+                continue;
+            }
+
+            LinearLayout row =
+                    (LinearLayout) view;
+
+            PrayerRow model =
+                    prayerData.get(
+                            i
+                    );
+
+            // -------------------------------------------------
+            // Title
+            // -------------------------------------------------
+
+            if (row.getChildCount() >= 2) {
+
+                View titleView =
+                        row.getChildAt(1);
+
+                if (titleView instanceof EditText) {
+
+                    model.title =
+                            ((EditText) titleView)
+                                    .getText()
+                                    .toString()
+                                    .trim();
+                }
+            }
+
+            // -------------------------------------------------
+            // Content / Time
+            // -------------------------------------------------
+
+            if ("normal".equals(
+                    model.type
+            )) {
+
+                if (row.getChildCount() >= 4) {
+
+                    View contentView =
+                            row.getChildAt(2);
+
+                    if (contentView instanceof EditText) {
+
+                        model.content =
+                                ((EditText) contentView)
+                                        .getText()
+                                        .toString()
+                                        .trim();
+                    }
+                }
+            }
+        }
+    }
+
+    // =========================================================
+    // Progress
+    // =========================================================
+
+    private void setupProgress(
+            View view,
+            int currentStep) {
 
         int[] stepIds = {
+
                 R.id.progressStep1,
                 R.id.progressStep2,
                 R.id.progressStep3,
@@ -721,6 +1171,7 @@ public class AddSynagogue04PrayerFragment extends Fragment {
         };
 
         int[] lineIds = {
+
                 R.id.progressLine1,
                 R.id.progressLine2,
                 R.id.progressLine3,
@@ -728,17 +1179,32 @@ public class AddSynagogue04PrayerFragment extends Fragment {
                 R.id.progressLine5
         };
 
-        for (int i = 0; i < stepIds.length; i++) {
+        // -----------------------------------------------------
+        // Steps
+        // -----------------------------------------------------
+
+        for (int i = 0;
+             i < stepIds.length;
+             i++) {
 
             TextView step =
-                    view.findViewById(stepIds[i]);
+                    view.findViewById(
+                            stepIds[i]
+                    );
 
-            int stepNumber = i + 1;
+            if (step == null) {
+                continue;
+            }
+
+            int stepNumber =
+                    i + 1;
 
             if (stepNumber < currentStep) {
 
-                // שלב שהושלם
-                step.setText("✓");
+                step.setText(
+                        "✓"
+                );
+
                 step.setTextColor(
                         Color.WHITE
                 );
@@ -749,9 +1215,10 @@ public class AddSynagogue04PrayerFragment extends Fragment {
 
             } else if (stepNumber == currentStep) {
 
-                // השלב הנוכחי
                 step.setText(
-                        String.valueOf(stepNumber)
+                        String.valueOf(
+                                stepNumber
+                        )
                 );
 
                 step.setTextColor(
@@ -764,9 +1231,10 @@ public class AddSynagogue04PrayerFragment extends Fragment {
 
             } else {
 
-                // שלב שעדיין לא הגיע
                 step.setText(
-                        String.valueOf(stepNumber)
+                        String.valueOf(
+                                stepNumber
+                        )
                 );
 
                 step.setTextColor(
@@ -783,10 +1251,22 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             }
         }
 
-        for (int i = 0; i < lineIds.length; i++) {
+        // -----------------------------------------------------
+        // Lines
+        // -----------------------------------------------------
+
+        for (int i = 0;
+             i < lineIds.length;
+             i++) {
 
             View line =
-                    view.findViewById(lineIds[i]);
+                    view.findViewById(
+                            lineIds[i]
+                    );
+
+            if (line == null) {
+                continue;
+            }
 
             if (i + 1 < currentStep) {
 
@@ -810,16 +1290,69 @@ public class AddSynagogue04PrayerFragment extends Fragment {
             }
         }
 
+        // -----------------------------------------------------
+        // Step text
+        // -----------------------------------------------------
+
         TextView stepText =
                 view.findViewById(
                         R.id.progressStepText
                 );
 
-        stepText.setText(
-                "שלב "
-                        + currentStep
-                        + " מתוך 6"
+        if (stepText != null) {
+
+            stepText.setText(
+                    "שלב "
+                            + currentStep
+                            + " מתוך 6"
+            );
+        }
+    }
+
+    // =========================================================
+    // DP
+    // =========================================================
+
+    private int dp(
+            int value) {
+
+        float density =
+                getResources()
+                        .getDisplayMetrics()
+                        .density;
+
+        return Math.round(
+                value * density
         );
     }
 
+    // =========================================================
+    // Toolbar
+    // =========================================================
+
+    @Override
+    public void onResume() {
+
+        super.onResume();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(
+                false
+        );
+    }
+
+    @Override
+    public void onPause() {
+
+        super.onPause();
+
+        MainActivity activity =
+                (MainActivity) requireActivity();
+
+        activity.setToolbarVisible(
+                true
+        );
+    }
 }
